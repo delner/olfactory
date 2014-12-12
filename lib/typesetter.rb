@@ -17,4 +17,8 @@ module Typesetter
   def self.build_template(name, options = {}, &block)
     self.templates[name].build(block, options)
   end
+
+  def self.reload
+    @@templates = {}
+  end
 end
