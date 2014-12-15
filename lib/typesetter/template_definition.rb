@@ -12,33 +12,37 @@ module Typesetter
     end
 
     def build(block, options = {})
-      new_template = Template.new(self, options)
-      new_template.build(block, options)
+      if options[:preset]
+        self.build_preset(options[:preset], options.reject { |k,v| k == :preset })
+      else
+        new_template = Template.new(self, options)
+        new_template.build(block, options)
+      end
       new_template
     end
-    def build_preset(preset_value, options = {})
-      if preset_value.class <= Integer
+    def build_preset(preset_name, options = {})
+      if preset_name.class <= Integer
         # Build multiple
-        Array.new(preset_value) { self.build(nil, options) }
-      elsif preset_definition = self.find_preset_definition(preset_value)
+        Array.new(preset_name) { self.build(nil, options) }
+      elsif preset_definition = self.find_preset_definition(preset_name)
         # Build single
         new_template = Template.new(self, options)
         preset_block = preset_definition[:evaluator]
-        # binding.pry if preset_value == :basic
         if preset_definition[:preset_name].class == Regexp
-          new_template.build(preset_block, :value => preset_value)
+          new_template.build(preset_block, options.merge(:value => preset_name))
         else
-          new_template.build(preset_block)
+          new_template.build(preset_block, options)
         end
       else
         raise "Missing preset matching '#{preset_value}' for template!"
       end
     end
 
-    def find_preset_definition(preset_value)
-      preset_definition = self.t_presets[preset_value]
+    def find_preset_definition(preset_name)
+      preset_definition = self.t_presets[preset_name]
       if preset_definition.nil?
-        preset_name = self.t_presets.keys.detect { |p_name| p_name.class == Regexp && p_name.match(preset_value.to_s) }
+        # Try to find a regexp named preset that matches
+        preset_name = self.t_presets.keys.detect { |p_name| p_name.class == Regexp && p_name.match(preset_name.to_s) }
         preset_definition = self.t_presets[preset_name] if preset_name
       end
       preset_definition

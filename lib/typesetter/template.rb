@@ -1,7 +1,7 @@
 # -*- encoding : utf-8 -*-
 module Typesetter
   class Template < Hash
-    attr_accessor :definition, :transients, :no_override
+    attr_accessor :definition, :transients, :default_mode
 
     def initialize(definition, options = {})
       self.definition = definition
@@ -16,55 +16,56 @@ module Typesetter
           block.call(self)
         end
       end
-      self.add_defaults
+      if options[:defaults].nil? || options[:defaults]
+        # Only set defaults if configuration wasn't specified
+        self.add_defaults
+      end
+
       self
     end
 
     def method_missing(meth, *args, &block)
-      if !(self.has_key?(meth) && self.no_override) && \
-          (definition.t_macros.has_key?(meth) || definition.t_subtemplates.has_key?(meth) || definition.t_items.has_key?(meth))
-        # Explicit fields
+      # Explicit fields
+      if (definition.t_macros.has_key?(meth) || definition.t_subtemplates.has_key?(meth) || definition.t_items.has_key?(meth))
         if definition.t_macros.has_key?(meth)
           field_type = :macro
           definition_of_field = definition.t_macros[meth]
           field_value = build_macro(definition_of_field, args, block)
-        elsif definition.t_subtemplates.has_key?(meth)
+        elsif definition.t_subtemplates.has_key?(meth) && !(self.default_mode && self.has_key?(meth))
           field_type = :subtemplate
           definition_of_field = definition.t_subtemplates[meth]
           subtemplate_name = definition_of_field.has_key?(:template) ? definition_of_field[:template] : meth
           field_value = build_subtemplate(Typesetter.templates[subtemplate_name], args, block)
-        elsif definition.t_items.has_key?(meth)
+        elsif definition.t_items.has_key?(meth) && !(self.default_mode && self.has_key?(meth))
           field_type = :item
           definition_of_field = definition.t_items[meth]
           field_value = build_item(definition_of_field, args, block)
         end
-
         # Add field value to template
-        if definition_of_field[:collection]
-          self[meth] = [] if !self.has_key?(meth)
-          if field_type == :subtemplate && field_value.class <= Array
-            self[meth].concat(field_value)
+        if field_type && field_type != :macro
+          if definition_of_field[:collection]
+            self[meth] = [] if !self.has_key?(meth)
+            if field_type == :subtemplate && field_value.class <= Array
+              self[meth].concat(field_value)
+            else
+              self[meth] << field_value
+            end
           else
-            self[meth] << field_value
+            self[meth] = field_value
           end
-        else
-          self[meth] = field_value
         end
-      # Non-explicit fields
-      elsif args.count > 0 || block
-        if block
-          self[meth] = block.call
-        else
-          self[meth] = (args.count == 1 ? args.first : args)
-        end
+      # No field definition
       else
         super # Unknown method
       end
     end
-
+    def transient(name, value)
+      self.transients[name] = value if !(self.default_mode && self.transients.has_key?(name))
+    end
     def add_defaults
-      self.no_override = true   # Kind of a hack, to prevent defaults from overriding values...
-                                # More efficient than overriding pre-generated defaults, and allows for nicer syntax.
+      # Prevents overwrites of custom values by defaults
+      self.default_mode = true # Hackish for sure, but its efficient...
+
       default_definition = definition.t_default
       if default_definition[:evaluator]
         default_definition[:evaluator].call(self)
@@ -72,11 +73,12 @@ module Typesetter
         preset_definition = definition.find_preset_definition(default_definition[:preset_name])
         preset_definition[:evaluator].call(self)
       end
-      self.no_override = false
+
+      self.default_mode = false
     end
     def build_macro(macro_definition, args, block)
       if macro_definition[:evaluator]
-        macro_definition[:evaluator].call(*args)
+        macro_definition[:evaluator].call(self, *args)
       end
     end
     def build_subtemplate(subtemplate_definition, args, block)
@@ -88,7 +90,7 @@ module Typesetter
     end
     def build_item(item_definition, args, block)
       if block
-        block.call(*args) # Invoke block
+        block.call(*args)
       else
         if item_definition[:evaluator]
           item_definition[:evaluator].call(*args)
