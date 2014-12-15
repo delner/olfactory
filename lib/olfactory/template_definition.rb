@@ -1,5 +1,5 @@
 # -*- encoding : utf-8 -*-
-module Typesetter
+module Olfactory
   class TemplateDefinition
     attr_accessor :t_items, :t_subtemplates, :t_macros, :t_presets, :t_default
 

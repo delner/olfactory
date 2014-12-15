@@ -1,16 +1,16 @@
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
-require 'typesetter/version'
+require 'olfactory/version'
 
 Gem::Specification.new do |s|
-  s.name        = 'typesetter'
-  s.version     = Typesetter::VERSION
-  s.summary     = "Typesetter is an extension for factory gems, which adds templates."
-  s.description = "Typesetter is an extension for factory gems, which adds templates that allow for easy creation of groups of objects."
+  s.name        = 'olfactory'
+  s.version     = Olfactory::VERSION
+  s.summary     = "Olfactory is an extension for factory gems, which adds templates."
+  s.description = "Olfactory is an extension for factory gems, which adds templates that allow for easy creation of groups of objects."
   s.authors     = ["David Elner"]
   s.email       = 'david@davidelner.com'
   s.files       = `git ls-files`.split("\n")
   s.test_files  = `git ls-files -- {spec,features,gemfiles}/*`.split("\n")
-  s.homepage    = 'https://github.com/StreetEasy/typesetter'
+  s.homepage    = 'https://github.com/StreetEasy/olfactory'
   s.license     = 'MIT'
 
   s.require_paths = ['lib']

@@ -5,12 +5,12 @@ require 'rubygems'
 require 'pry'
 require 'spec/autorun'
 
-require 'typesetter'
+require 'olfactory'
 
 Dir["spec/support/**/*.rb"].each { |f| require File.expand_path(f) }
 
 Spec::Runner.configure do |config|
   config.after do
-    Typesetter.reload
+    Olfactory.reload
   end
 end

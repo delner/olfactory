@@ -1,5 +1,5 @@
 # -*- encoding : utf-8 -*-
-module Typesetter
+module Olfactory
   class Template < Hash
     attr_accessor :definition, :transients, :default_mode
 
@@ -35,7 +35,7 @@ module Typesetter
           field_type = :subtemplate
           definition_of_field = definition.t_subtemplates[meth]
           subtemplate_name = definition_of_field.has_key?(:template) ? definition_of_field[:template] : meth
-          field_value = build_subtemplate(Typesetter.templates[subtemplate_name], args, block)
+          field_value = build_subtemplate(Olfactory.templates[subtemplate_name], args, block)
         elsif definition.t_items.has_key?(meth) && !(self.default_mode && self.has_key?(meth))
           field_type = :item
           definition_of_field = definition.t_items[meth]

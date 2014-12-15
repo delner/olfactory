@@ -1,8 +1,8 @@
 # -*- encoding : utf-8 -*-
-require 'typesetter/template_definition'
-require 'typesetter/template'
+require 'olfactory/template_definition'
+require 'olfactory/template'
 
-module Typesetter
+module Olfactory
   @@templates = {}
   def self.templates
     @@templates

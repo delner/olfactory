@@ -1,9 +1,9 @@
-Typesetter
+Olfactory
 ==========
 
 ### Introduction
 
-Typesetter is a factory extension for creating complex object sets, as a supplement to *factory_girl*, *fabrication*, or other factories.
+Olfactory is a factory extension for creating complex object sets, as a supplement to *factory_girl*, *fabrication*, or other factories.
 
 It introduces the concept of **templates**: an abstract group of objects. These can be used to make test setup much quicker and easier.
 
@@ -39,7 +39,7 @@ Instead, we can use templates to simplify our definitions:
 ```ruby
 context "networkable people" do
   let(:user_group) do
-    Typesetter.create_template :user_group do |group|
+    Olfactory.create_template :user_group do |group|
       group.user :desktop_user { |user| user.phone { |phone| phone.app :facebook, :twitter } }
       group.user :tablet_user { |user| user.tablet { |tablet| tablet.app :facebook } }
       group.user :phone_user { |user| user.desktop { |desktop| desktop.app :twitter } }
