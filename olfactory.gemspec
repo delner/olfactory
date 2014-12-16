@@ -16,8 +16,8 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
 
-  s.add_development_dependency("rspec",    "~> 1.3.2")
-  s.add_development_dependency("pry")
-  s.add_development_dependency("pry-nav")
-  s.add_development_dependency("pry-stack_explorer")
+  s.add_development_dependency("rspec", "~> 3.1")
+  s.add_development_dependency("pry", "~> 0.10")
+  s.add_development_dependency("pry-nav", "~> 0.2")
+  s.add_development_dependency("pry-stack_explorer", "~> 0.4.9")
 end
