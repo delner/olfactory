@@ -9,6 +9,7 @@ module Olfactory
     end
 
     def build(block, options = {})
+      self.add_defaults(:before) if options[:defaults].nil? || options[:defaults]
       if block # Block can be nil (when we want only defaults)
         if options[:value]
           block.call(self, options[:value])
@@ -16,10 +17,7 @@ module Olfactory
           block.call(self)
         end
       end
-      if options[:defaults].nil? || options[:defaults]
-        # Only set defaults if configuration wasn't specified
-        self.add_defaults
-      end
+      self.add_defaults(:after) if options[:defaults].nil? || options[:defaults]
 
       self
     end
@@ -62,15 +60,21 @@ module Olfactory
     def transient(name, value)
       self.transients[name] = value if !(self.default_mode && self.transients.has_key?(name))
     end
-    def add_defaults
+    def add_defaults(mode)
       # Prevents overwrites of custom values by defaults
       self.default_mode = true # Hackish for sure, but its efficient...
 
-      default_definition = definition.t_default
+      case mode
+      when :before
+        default_definition = definition.t_before
+      when :after
+        default_definition = definition.t_after
+      end
+          
       if default_definition[:evaluator]
         default_definition[:evaluator].call(self)
-      elsif default_definition[:preset_name]
-        preset_definition = definition.find_preset_definition(default_definition[:preset_name])
+      elsif default_definition[:preset]
+        preset_definition = definition.find_preset_definition(default_definition[:preset])
         preset_definition[:evaluator].call(self)
       end
 
@@ -85,7 +89,9 @@ module Olfactory
       if block
         subtemplate_definition.build(block, :transients => self.transients)
       else
-        subtemplate_definition.build_preset((args.count == 1 ? args.first : args), :transients => self.transients)
+        preset_name = args.detect { |value| !(value.class <= Integer) }
+        quantity = (args.detect { |value| value.class <= Integer } || 1)
+        subtemplate_definition.build_preset(preset_name, quantity, :transients => self.transients)
       end
     end
     def build_item(item_definition, args, block)
@@ -95,7 +101,7 @@ module Olfactory
         if item_definition[:evaluator]
           item_definition[:evaluator].call(*args)
         else
-          args.count == 1 ? args.first : argsnew
+          args.count == 1 ? args.first : args
         end
       end
     end

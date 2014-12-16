@@ -1,40 +1,51 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class TemplateDefinition
-    attr_accessor :t_items, :t_subtemplates, :t_macros, :t_presets, :t_default
+    attr_accessor :t_items, :t_subtemplates, :t_macros, :t_presets, :t_before, :t_after
 
     def initialize
       self.t_items = {}
       self.t_subtemplates = {}
       self.t_macros = {}
       self.t_presets = {}
-      self.t_default = {}
+      self.t_before = {}
+      self.t_after = {}
     end
 
     def build(block, options = {})
-      if options[:preset]
-        self.build_preset(options[:preset], options.reject { |k,v| k == :preset })
+      if options[:preset] || options[:quantity]
+        self.build_preset(options[:preset], (options[:quantity] || 1), options.reject { |k,v| [:preset, :quantity].include?(k) })
       else
         new_template = Template.new(self, options)
         new_template.build(block, options)
       end
       new_template
     end
-    def build_preset(preset_name, options = {})
-      if preset_name.class <= Integer
+    def build_preset(preset_name, quantity, options = {})
+      raise "Quantity must be an integer!" if !(quantity.class <= Integer)
+
+      if quantity > 1
         # Build multiple
-        Array.new(preset_name) { self.build(nil, options) }
-      elsif preset_definition = self.find_preset_definition(preset_name)
-        # Build single
-        new_template = Template.new(self, options)
-        preset_block = preset_definition[:evaluator]
-        if preset_definition[:preset_name].class == Regexp
-          new_template.build(preset_block, options.merge(:value => preset_name))
+        if preset_name
+          Array.new(quantity) { self.build_preset(preset_name, 1, options) }
         else
-          new_template.build(preset_block, options)
+          Array.new(quantity) { self.build(nil, options) }
         end
-      else
-        raise "Missing preset matching '#{preset_value}' for template!"
+      elsif quantity == 1
+        if preset_definition = self.find_preset_definition(preset_name)
+          # Build single
+          new_template = Template.new(self, options)
+          preset_block = preset_definition[:evaluator]
+          if preset_definition[:regexp]
+            new_template.build(preset_block, options.merge(:value => preset_name))
+          else
+            new_template.build(preset_block, options)
+          end
+        else
+          raise "Missing preset matching '#{preset_name}' for template!"
+        end
+      else quantity <= 0
+        raise "Can't build 0 or less items!"
       end
     end
 
@@ -72,11 +83,17 @@ module Olfactory
     # Defines a preset of values
     def preset(name, options = {}, &block)
       self.t_presets[name] = { :evaluator => block }.merge(options)
+      self.t_presets[name] = self.t_presets[name].merge(:regexp => name) if name.class <= Regexp
     end
 
     # Defines defaults
-    def default(preset_name = nil, options = {}, &block)
-      self.t_default = { :preset_name => preset_name, :evaluator => block }.merge(options)
+    def before(options = {}, &block)
+      self.t_before = { :evaluator => block }.merge(options)
+      self.t_before = self.t_before.merge(:preset => options[:preset]) if options[:preset]
+    end
+    def after(options = {}, &block)
+      self.t_after = { :evaluator => block }.merge(options)
+      self.t_after = self.t_after.merge(:preset => options[:preset]) if options[:preset]
     end
   end
 end
