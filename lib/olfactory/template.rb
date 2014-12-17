@@ -102,7 +102,12 @@ module Olfactory
     end
     def build_subtemplate(subtemplate_definition, args, block, settings = {})
       if block
-        subtemplate_definition.build(block, :transients => self.transients)
+        quantity = (args.detect { |value| value.class <= Integer } || 1)
+        if quantity > 1
+          Array.new(quantity) { subtemplate_definition.build(block, :transients => self.transients) }
+        else
+          subtemplate_definition.build(block, :transients => self.transients)
+        end
       else
         preset_name = args.detect { |value| !(value.class <= Integer) }
         quantity = (args.detect { |value| value.class <= Integer } || 1)
