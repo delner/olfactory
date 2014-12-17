@@ -1,6 +1,9 @@
 require 'spec_helper'
 
 describe Olfactory::Template do
+  before do
+    Olfactory.reload
+  end
   context "has_one" do
     before do
       Olfactory.template :widget do |t|
@@ -666,10 +669,102 @@ describe Olfactory::Template do
     end
   end
   context "transients" do
-    # TODO: Add examples
+    before do
+      Olfactory.template :widget do |t|
+        t.has_one :doodad
+      end
+    end
+    let(:value) { "temporary value"}
+    context "when set" do
+      subject do
+        Olfactory.build_template :widget do |t|
+          t.transient :foo, value
+        end
+      end
+      it do
+        expect(subject.transients[:foo]).to eq(value)
+      end
+    end
+    context "when read" do
+      subject do
+        Olfactory.build_template :widget do |t|
+          t.transient :foo, value
+          t.doodad "#{t.transients[:foo]}"
+        end
+      end
+      it do
+        expect(subject[:doodad]).to eq(value)
+      end
+    end
+    context "when inherited" do
+      before do
+        Olfactory.template :widget do |t|
+          t.embeds_one :doodad
+        end
+        Olfactory.template :doodad do |t|
+          t.has_one :gizmo
+        end
+      end
+      subject do
+        Olfactory.build_template :widget do |t|
+          t.transient :foo, value
+          t.doodad
+        end
+      end
+      it do
+        expect(subject[:doodad].transients[:foo]).to eq(value)
+      end
+    end
   end
   context "defaults" do
-    # TODO: Add examples
+    let(:value) { "doodad" }
+    let(:default_value) { "default doodad" }
+    context "before" do
+      before do
+        Olfactory.template :widget do |t|
+          t.has_one :doodad
+          t.has_one :other_doodad
+          t.before do |d|
+            d.doodad default_value
+            d.other_doodad default_value
+          end
+        end
+      end
+      subject do
+        Olfactory.build_template :widget do |t|
+          t.doodad value
+        end
+      end
+      it "values can be overriden" do
+        expect(subject[:doodad]).to eq(value)
+      end
+      it "values can be set"do
+        expect(subject[:other_doodad]).to eq(default_value)
+      end
+    end
+    context "after" do
+      before do
+        Olfactory.template :widget do |t|
+          t.has_one :doodad
+          t.has_one :other_doodad
+          t.after do |d|
+            d.doodad default_value
+            d.other_doodad default_value
+          end
+        end
+      end
+      subject do
+        Olfactory.build_template :widget do |t|
+          t.doodad value
+        end
+      end
+      it "values will not override existing ones" do
+        expect(subject[:doodad]).to eq(value)
+      end
+      it "values will fill in missing ones"do
+        expect(subject[:other_doodad]).to eq(default_value)
+      end
+    end
   end
 end
 
