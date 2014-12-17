@@ -41,6 +41,8 @@ module Olfactory
           else
             new_template.build(preset_block, options)
           end
+        elsif preset_name.nil?
+          self.build(nil, options)
         else
           raise "Missing preset matching '#{preset_name}' for template!"
         end
@@ -49,50 +51,96 @@ module Olfactory
       end
     end
 
-    def find_preset_definition(preset_name)
-      preset_definition = self.t_presets[preset_name]
+    def find_field_definition(name)
+      definition = find_macro_definition(name)
+      definition ||= find_subtemplate_definition(name)
+      definition ||= find_item_definition(name)
+      definition
+    end
+
+    def find_definition_in_list(name, definition_list)
+      definition = definition_list[name]
+      definition ||= definition_list.values.detect do |v|
+        v.has_key?(:alias) && (v[:alias] == name || (v.respond_to?("include") && v.include?(name)))
+      end
+      definition
+    end
+
+    def find_macro_definition(name)
+      self.find_definition_in_list(name, self.t_macros)
+    end
+
+    def find_subtemplate_definition(name)
+      definition = self.find_definition_in_list(name, self.t_subtemplates)
+      definition ||= self.t_subtemplates.values.detect { |v| v.has_key?(:singular) && v[:singular] == name }
+      definition
+    end
+
+    def find_item_definition(name)
+      definition = self.find_definition_in_list(name, self.t_items)
+      definition ||= self.t_items.values.detect { |v| v.has_key?(:singular) && v[:singular] == name }
+      definition
+    end
+
+    def find_preset_definition(name)
+      preset_definition = self.find_definition_in_list(name, self.t_presets)
       if preset_definition.nil?
         # Try to find a regexp named preset that matches
-        preset_name = self.t_presets.keys.detect { |p_name| p_name.class == Regexp && p_name.match(preset_name.to_s) }
-        preset_definition = self.t_presets[preset_name] if preset_name
+        name = self.t_presets.keys.detect { |p_name| p_name.class == Regexp && p_name.match(name.to_s) }
+        preset_definition = self.t_presets[name] if name
       end
       preset_definition
     end
 
     # Defines a value holding field
     def has_one(name, options = {}, &block)
-      self.t_items[name] = { :evaluator => block }.merge(options)
+      self.t_items[name] = {  :type => :item,
+                              :name => name,
+                              :evaluator => block
+                            }.merge(options)
     end
     def has_many(name, options = {}, &block)
-      self.t_items[name] = { :evaluator => block, :collection => true }.merge(options)
+      self.has_one(name, options.merge(:collection => true), &block)
     end
 
     # Defines a hash-holding field
     def embeds_one(name, options = {}, &block)
-      self.t_subtemplates[name] = { :evaluator => block }.merge(options)
+      self.t_subtemplates[name] = { :type => :subtemplate,
+                                    :name => name,
+                                    :evaluator => block 
+                                  }.merge(options)
     end
     def embeds_many(name, options = {}, &block)
-      self.t_subtemplates[name] = { :evaluator => block, :collection => true }.merge(options)
+      self.embeds_one(name, options.merge(:collection => true), &block)
     end
 
     # Defines a macro
     def macro(name, options = {}, &block)
-      self.t_macros[name] = { :evaluator => block }.merge(options)
+      self.t_macros[name] = { :type => :macro,
+                              :name => name,
+                              :evaluator => block 
+                            }.merge(options)
     end
 
     # Defines a preset of values
     def preset(name, options = {}, &block)
-      self.t_presets[name] = { :evaluator => block }.merge(options)
+      self.t_presets[name] = {  :type => :preset,
+                                :name => name,
+                                :evaluator => block
+                              }.merge(options)
       self.t_presets[name] = self.t_presets[name].merge(:regexp => name) if name.class <= Regexp
     end
 
     # Defines defaults
     def before(options = {}, &block)
-      self.t_before = { :evaluator => block }.merge(options)
+      self.t_before = { :type => :default,
+                        :evaluator => block
+                      }.merge(options)
       self.t_before = self.t_before.merge(:preset => options[:preset]) if options[:preset]
     end
     def after(options = {}, &block)
-      self.t_after = { :evaluator => block }.merge(options)
+      self.t_after = {  :type => :default,
+                        :evaluator => block }.merge(options)
       self.t_after = self.t_after.merge(:preset => options[:preset]) if options[:preset]
     end
   end

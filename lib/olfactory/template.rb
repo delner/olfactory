@@ -24,37 +24,41 @@ module Olfactory
 
     def method_missing(meth, *args, &block)
       # Explicit fields
-      if (definition.t_macros.has_key?(meth) || definition.t_subtemplates.has_key?(meth) || definition.t_items.has_key?(meth))
-        if definition.t_macros.has_key?(meth)
-          field_type = :macro
-          definition_of_field = definition.t_macros[meth]
-          field_value = build_macro(definition_of_field, args, block)
-        elsif definition.t_subtemplates.has_key?(meth) && !(self.default_mode && self.has_key?(meth))
-          field_type = :subtemplate
-          definition_of_field = definition.t_subtemplates[meth]
-          subtemplate_name = definition_of_field.has_key?(:template) ? definition_of_field[:template] : meth
-          field_value = build_subtemplate(Olfactory.templates[subtemplate_name], args, block)
-        elsif definition.t_items.has_key?(meth) && !(self.default_mode && self.has_key?(meth))
-          field_type = :item
-          definition_of_field = definition.t_items[meth]
-          field_value = build_item(definition_of_field, args, block)
-        end
-        # Add field value to template
-        if field_type && field_type != :macro
-          if definition_of_field[:collection]
-            self[meth] = [] if !self.has_key?(meth)
-            if field_type == :subtemplate && field_value.class <= Array
-              self[meth].concat(field_value)
-            else
-              self[meth] << field_value
-            end
-          else
-            self[meth] = field_value
-          end
-        end
-      # No field definition
+      if field_definition = self.definition.find_field_definition(meth)
+        populate_field(field_definition, meth, args, block)
       else
         super # Unknown method
+      end
+    end
+    def can_set_field?(meth)
+      !(self.default_mode && self.has_key?(meth))
+    end
+    def populate_field(field_definition, meth, args, block)
+      if field_definition[:type] == :macro
+        field_value = build_macro(field_definition, args, block)
+      elsif field_definition[:type] == :subtemplate && can_set_field?(field_definition[:name])
+        subtemplate_name = field_definition.has_key?(:template) ? field_definition[:template] : field_definition[:name]
+        if subtemplate_definition = Olfactory.templates[subtemplate_name]
+          field_value = build_subtemplate(subtemplate_definition, args, block)
+        end
+        field_value
+      elsif field_definition[:type] == :item && can_set_field?(field_definition[:name])
+        field_value = build_item(field_definition, args, block)
+      else
+        ignore = true
+      end
+      # Add field value to template
+      if !ignore && field_definition[:type] && field_definition[:type] != :macro
+        if field_definition[:collection]
+          self[field_definition[:name]] ||= []
+          if field_definition[:type] == :subtemplate && field_value.class <= Array
+            self[field_definition[:name]].concat(field_value)
+          else
+            self[field_definition[:name]] << field_value
+          end
+        else
+          self[field_definition[:name]] = field_value
+        end
       end
     end
     def transient(name, value)
