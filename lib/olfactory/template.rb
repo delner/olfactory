@@ -34,12 +34,18 @@ module Olfactory
       !(self.default_mode && self.has_key?(meth))
     end
     def populate_field(field_definition, meth, args, block)
+      variable_name = field_definition[:named] ? args.first : nil
+      args = variable_name ? args[1..(args.size-1)] : args
+      if field_definition[:named] && (variable_name.nil? || variable_name.class <= Numeric)
+        raise "Must provide a name when adding to a named field!"
+      end
+
       if field_definition[:type] == :macro
         field_value = build_macro(field_definition, args, block)
       elsif field_definition[:type] == :subtemplate && can_set_field?(field_definition[:name])
         subtemplate_name = field_definition.has_key?(:template) ? field_definition[:template] : field_definition[:name]
         if subtemplate_definition = Olfactory.templates[subtemplate_name]
-          field_value = build_subtemplate(subtemplate_definition, args, block)
+          field_value = build_subtemplate(subtemplate_definition, args, block, :named => field_definition[:named])
         end
         field_value
       elsif field_definition[:type] == :item && can_set_field?(field_definition[:name])
@@ -47,14 +53,19 @@ module Olfactory
       else
         ignore = true
       end
+
       # Add field value to template
       if !ignore && field_definition[:type] && field_definition[:type] != :macro
         if field_definition[:collection]
-          self[field_definition[:name]] ||= []
-          if field_definition[:type] == :subtemplate && field_value.class <= Array
-            self[field_definition[:name]].concat(field_value)
-          else
-            self[field_definition[:name]] << field_value
+          self[field_definition[:name]] ||= field_definition[:collection].new
+          if field_definition[:collection] <= Array
+            if field_definition[:type] == :subtemplate && field_value.class <= Array
+              self[field_definition[:name]].concat(field_value)
+            else
+              self[field_definition[:name]] << field_value
+            end
+          elsif field_definition[:collection] <= Hash && variable_name
+            self[field_definition[:name]][variable_name] = field_value
           end
         else
           self[field_definition[:name]] = field_value
@@ -89,12 +100,17 @@ module Olfactory
         macro_definition[:evaluator].call(self, *args)
       end
     end
-    def build_subtemplate(subtemplate_definition, args, block)
+    def build_subtemplate(subtemplate_definition, args, block, settings = {})
       if block
         subtemplate_definition.build(block, :transients => self.transients)
       else
         preset_name = args.detect { |value| !(value.class <= Integer) }
         quantity = (args.detect { |value| value.class <= Integer } || 1)
+
+        if settings[:named] && quantity > 1
+          raise "Cannot specify a quantity for a named set of items: names of generated items would be ambiguous."
+        end
+
         subtemplate_definition.build_preset(preset_name, quantity, :transients => self.transients)
       end
     end

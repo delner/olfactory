@@ -100,7 +100,7 @@ module Olfactory
                             }.merge(options)
     end
     def has_many(name, options = {}, &block)
-      self.has_one(name, options.merge(:collection => true), &block)
+      self.has_one(name, options.merge(:collection => (options[:named] ? Hash : Array)), &block)
     end
 
     # Defines a hash-holding field
@@ -111,7 +111,7 @@ module Olfactory
                                   }.merge(options)
     end
     def embeds_many(name, options = {}, &block)
-      self.embeds_one(name, options.merge(:collection => true), &block)
+      self.embeds_one(name, options.merge(:collection => (options[:named] ? Hash : Array)), &block)
     end
 
     # Defines a macro
