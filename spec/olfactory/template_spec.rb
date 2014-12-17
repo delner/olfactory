@@ -625,7 +625,45 @@ describe Olfactory::Template do
     end
   end
   context "macros" do
-    # TODO: Add examples
+    before do
+      Olfactory.template :widget do |t|
+        t.has_one :doodad
+        t.macro :make_shiny do |m, v|
+          m.doodad "shiny #{m[:doodad]}"
+        end
+      end
+    end
+    let(:value) { "doodad" }
+
+    subject do
+      Olfactory.build_template :widget do |t|
+        t.doodad value
+        t.make_shiny
+      end
+    end
+    it "should execute its block" do
+      expect(subject[:doodad]).to eq("shiny #{value}")
+    end
+
+    context "with parameters" do
+      before do
+        Olfactory.template :widget do |t|
+          t.has_one :doodad
+          t.macro :make do |m, adj, adj2|
+            m.doodad "#{adj.to_s} #{adj2.to_s} #{m[:doodad]}"
+          end
+        end
+      end
+      subject do
+        Olfactory.build_template :widget do |t|
+          t.doodad value
+          t.make :very, :shiny
+        end
+      end
+      it "receives them on invocation" do
+        expect(subject[:doodad]).to eq("very shiny #{value}")
+      end
+    end
   end
   context "transients" do
     # TODO: Add examples
