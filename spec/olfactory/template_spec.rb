@@ -68,126 +68,226 @@ describe Olfactory::Template do
     end
     let(:value) { "doodad" }
 
-    context "given a basic value" do
-      subject do
-        Olfactory.build_template :widget do |t|
-          t.doodad value
-        end
-      end
-      it do
-        expect(subject[:doodad]).to eq([value])
-      end
-    end
-    context "given a block value" do
-      subject do
-        Olfactory.build_template :widget do |t|
-          t.doodad { value }
-        end
-      end
-      it do
-        expect(subject[:doodad]).to eq([value])
-      end
-    end
-    context "with an alias" do
-      before do
-        Olfactory.template :widget do |t|
-          t.has_many :doodad, :alias => :foo
-        end
-      end
-      context "given a basic value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.foo value
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([value])
-        end
-      end
-      context "given a block value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.foo { value }
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([value])
-        end
-      end
-    end
-    context "with singular" do
+    context "as generic collection" do
       before do
         Olfactory.template :widget do |t|
           t.has_many :doodads, :singular => :doodad
         end
       end
-      context "given a basic value" do
+      context "invoked as singular" do
+        context "given a basic value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad value
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([value])
+          end
+        end
+        context "given a block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad { value }
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([value])
+          end
+        end
+      end
+      context "invoked as plural" do
+        context "given an integer & block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads 2 do
+                value
+              end
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([value, value])
+          end
+        end
+        context "given an array" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads [value, value]
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([value, value])
+          end
+        end
+        context "given a splattered set of arguments" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads value, value
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([value, value])
+          end
+        end
+      end
+      context "given sequential invocations" do
         subject do
           Olfactory.build_template :widget do |t|
+            t.doodad value
+            t.doodads value, value
             t.doodad value
           end
         end
         it do
-          expect(subject[:doodads]).to eq([value])
+          expect(subject[:doodads]).to eq([value, value, value, value])
         end
       end
-      context "given a block value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad { value }
+      context "with an alias" do
+        before do
+          Olfactory.template :widget do |t|
+            t.has_many :doodads, :singular => :doodad, :alias => :foos
           end
         end
-        it do
-          expect(subject[:doodads]).to eq([value])
+        context "given a basic value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.foos value
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([value])
+          end
+        end
+        context "given a block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.foos { value }
+            end
+          end
+          it do
+            # Alias only applies to the plural context, not singular.
+            expect(subject[:doodads]).to eq(nil)
+          end
         end
       end
     end
-    context "as named" do
+    context "as named collection" do
       before do
         Olfactory.template :widget do |t|
-          t.has_many :doodad, :named => :true
+          t.has_many :doodads, :singular => :doodad, :named => :true
         end
       end
-      context "given a name & basic value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :foo, value
-          end
-        end
-        it do
-          expect(subject[:doodad][:foo]).to eq(value)
-        end
-      end
-      context "given a name & block value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :foo do
-              value
+      context "invoked as singular" do
+        context "given a name & basic value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad :foo, value
             end
           end
+          it do
+            expect(subject[:doodads][:foo]).to eq(value)
+          end
         end
-        it do
-          expect(subject[:doodad][:foo]).to eq(value)
+        context "given a name & block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad :foo do
+                value
+              end
+            end
+          end
+          it do
+            expect(subject[:doodads][:foo]).to eq(value)
+          end
+        end
+        context "given no name" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad
+            end
+          end
+          it do
+            expect { subject }.to raise_error
+          end
+        end
+        context "given no name & numeric value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad 1
+            end
+          end
+          it do
+            # It would have take "1" as the name, but the object would be nil.
+            # Thus, not added.
+            expect(subject[:doodads]).to eq(nil)
+          end
         end
       end
-      context "given a no name" do
+      context "invoked as plural" do
+        context "given a hash value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads :a => value
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq({ :a => value })
+          end
+        end
+        context "given no name or value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads
+            end
+          end
+          it do
+            expect(subject).to eq({})
+          end
+        end
+      end
+      context "given sequential invocations" do
         subject do
           Olfactory.build_template :widget do |t|
-            t.doodad
+            t.doodad :a, value
+            t.doodads :b => value, :c => value
+            t.doodad :d, value
           end
         end
         it do
-          expect { subject }.to raise_error
+          expect(subject[:doodads]).to eq({ :a => value,
+                                            :b => value,
+                                            :c => value,
+                                            :d => value })
         end
       end
-      context "given a no name & numeric value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad 1
+      context "with an alias" do
+        before do
+          Olfactory.template :widget do |t|
+            t.has_many :doodads,  :singular => :doodad,
+                                  :named => :true,
+                                  :alias => :foos
           end
         end
-        it do
-          expect { subject }.to raise_error
+        context "given a hash" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.foos :a => value
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq({:a => value})
+          end
+        end
+        context "given a name and basic value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.foos :a, value
+            end
+          end
+          it do
+            # Alias only applies to the plural context, not singular.
+            expect(subject[:doodads]).to eq(nil)
+          end
         end
       end
     end
@@ -302,7 +402,7 @@ describe Olfactory::Template do
   context "embeds_many" do
     before do
       Olfactory.template :widget do |t|
-        t.embeds_many :doodad
+        t.embeds_many :doodads
       end
       Olfactory.template :doodad do |t|
         t.has_one :gizmo
@@ -310,315 +410,327 @@ describe Olfactory::Template do
     end
     let(:value) { "gizmo" }
 
-    context "given no value" do
-      subject do
-        Olfactory.build_template :widget do |t|
-          t.doodad
-        end
-      end
-      it do
-        expect(subject[:doodad]).to eq([{}])
-      end
-    end
-    context "given an integer value" do
-      subject do
-        Olfactory.build_template :widget do |t|
-          t.doodad 2
-        end
-      end
-      it do
-        expect(subject[:doodad]).to eq([{}, {}])
-      end
-    end
-    context "given a symbol value" do
+    context "as generic collection" do
       before do
         Olfactory.template :widget do |t|
-          t.embeds_many :doodad
+          t.embeds_many :doodads, :singular => :doodad
         end
         Olfactory.template :doodad do |t|
           t.has_one :gizmo
-          t.preset :shiny do |p|
-            p.gizmo "shiny #{value}"
+        end
+      end
+      context "invoked as singular" do
+        context "given no value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([{}])
+          end
+        end
+        context "given a symbol value" do
+          before do
+            Olfactory.template :widget do |t|
+              t.embeds_many :doodads, :singular => :doodad
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+              t.preset :shiny do |p|
+                p.gizmo "shiny #{value}"
+              end
+            end
+          end
+          context "that matches a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodad :shiny
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect(subject[:doodads]).to eq([{ :gizmo => "shiny #{value}" }])
+            end
+          end
+          context "that does not match a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodad :rusty
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect{ subject }.to raise_error
+            end
+          end
+        end
+        context "given a block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad { |d| d.gizmo value }
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([{ :gizmo => value }])
           end
         end
       end
-      context "that matches a defined preset" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :shiny
+      context "invoked as plural" do
+        context "given an integer value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads 2
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([{}, {}])
           end
         end
-        it do
-          # Expect it to invoke a preset on the subtemplate
-          expect(subject[:doodad]).to eq([{ :gizmo => "shiny #{value}" }])
-        end
-      end
-      context "that does not match a defined preset" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :rusty
+        context "given a symbol & integer value" do
+          before do
+            Olfactory.template :widget do |t|
+              t.embeds_many :doodads, :singular => :doodad
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+              t.preset :shiny do |p|
+                p.gizmo "shiny #{value}"
+              end
+            end
+          end
+          context "that matches a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodads :shiny, 2
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect(subject[:doodads]).to eq([{ :gizmo => "shiny #{value}" }, { :gizmo => "shiny #{value}" }])
+            end
+          end
+          context "that does not match a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodads :rusty, 2
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect{ subject }.to raise_error
+            end
           end
         end
-        it do
-          # Expect it to invoke a preset on the subtemplate
-          expect{ subject }.to raise_error
-        end
-      end
-    end
-    context "given a symbol & integer value" do
-      before do
-        Olfactory.template :widget do |t|
-          t.embeds_many :doodad
-        end
-        Olfactory.template :doodad do |t|
-          t.has_one :gizmo
-          t.preset :shiny do |p|
-            p.gizmo "shiny #{value}"
+        context "given an integer & symbol value" do
+          before do
+            Olfactory.template :widget do |t|
+              t.embeds_many :doodads, :singular => :doodad
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+              t.preset :shiny do |p|
+                p.gizmo "shiny #{value}"
+              end
+            end
+          end
+          context "that matches a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodads 2, :shiny
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect(subject[:doodads]).to eq([{ :gizmo => "shiny #{value}" }, { :gizmo => "shiny #{value}" }])
+            end
+          end
+          context "that does not match a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodads 2, :rusty
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect{ subject }.to raise_error
+            end
           end
         end
-      end
-      context "that matches a defined preset" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :shiny, 2
+        context "given an integer and block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads 2 do |d|
+                d.gizmo value
+              end
+            end
           end
-        end
-        it do
-          # Expect it to invoke a preset on the subtemplate
-          expect(subject[:doodad]).to eq([{ :gizmo => "shiny #{value}" }, { :gizmo => "shiny #{value}" }])
-        end
-      end
-      context "that does not match a defined preset" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :rusty, 2
-          end
-        end
-        it do
-          # Expect it to invoke a preset on the subtemplate
-          expect{ subject }.to raise_error
-        end
-      end
-    end
-    context "given an integer & symbol value" do
-      before do
-        Olfactory.template :widget do |t|
-          t.embeds_many :doodad
-        end
-        Olfactory.template :doodad do |t|
-          t.has_one :gizmo
-          t.preset :shiny do |p|
-            p.gizmo "shiny #{value}"
-          end
-        end
-      end
-      context "that matches a defined preset" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad 2, :shiny
-          end
-        end
-        it do
-          # Expect it to invoke a preset on the subtemplate
-          expect(subject[:doodad]).to eq([{ :gizmo => "shiny #{value}" }, { :gizmo => "shiny #{value}" }])
-        end
-      end
-      context "that does not match a defined preset" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad 2, :rusty
-          end
-        end
-        it do
-          # Expect it to invoke a preset on the subtemplate
-          expect{ subject }.to raise_error
-        end
-      end
-    end
-    context "given a block value" do
-      subject do
-        Olfactory.build_template :widget do |t|
-          t.doodad { |d| d.gizmo value }
-        end
-      end
-      it do
-        expect(subject[:doodad]).to eq([{ :gizmo => value }])
-      end
-    end
-    context "given an integer and block value" do
-      subject do
-        Olfactory.build_template :widget do |t|
-          t.doodad 2 do |d|
-            d.gizmo value
+          it do
+            expect(subject[:doodads]).to eq([{ :gizmo => value }, { :gizmo => value }])
           end
         end
       end
-      it do
-        expect(subject[:doodad]).to eq([{ :gizmo => value }, { :gizmo => value }])
-      end
-    end
-    context "given sequential invocations" do
-      context "with no value" do
+      context "given sequential invocations" do
         subject do
           Olfactory.build_template :widget do |t|
             t.doodad
+            t.doodads 2
             t.doodad
           end
         end
         it do
-          expect(subject[:doodad]).to eq([{}, {}])
+          expect(subject[:doodads]).to eq([{}, {}, {}, {}])
         end
       end
-      context "with a symbol value" do
+      context "with an alias" do
         before do
           Olfactory.template :widget do |t|
-            t.embeds_many :doodad
+            t.embeds_many :doodads, :singular => :doodad, :alias => :foos
           end
           Olfactory.template :doodad do |t|
             t.has_one :gizmo
-            t.preset :shiny do |p|
-              p.gizmo "shiny #{value}"
+          end
+        end
+        context "given an integer value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.foos 2
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([{},{}])
+          end
+        end
+        context "given a block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.foos { |f| f.gizmo value }
+            end
+          end
+          it do
+            # Alias only applies to the plural context, not singular.
+            expect { subject[:doodads] }.to raise_error
+          end
+        end
+      end
+    end
+    context "as named collection" do
+      before do
+        Olfactory.template :widget do |t|
+          t.embeds_many :doodads, :singular => :doodad,
+                                  :named => true
+        end
+        Olfactory.template :doodad do |t|
+          t.has_one :gizmo
+        end
+      end
+      context "invoked as singular" do
+        context "given a name & no value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad :a
+            end
+          end
+          it do
+            expect(subject[:doodads][:a]).to eq({})
+          end
+        end
+        context "given a name & symbol value" do
+          before do
+            Olfactory.template :widget do |t|
+              t.embeds_many :doodads, :singular => :doodad,
+                                      :named => true
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+              t.preset :shiny do |p|
+                p.gizmo "shiny #{value}"
+              end
+            end
+          end
+          context "that matches a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodad :a, :shiny
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect(subject[:doodads]).to eq({ :a => { :gizmo => "shiny #{value}" }})
+            end
+          end
+          context "that does not match a defined preset" do
+            subject do
+              Olfactory.build_template :widget do |t|
+                t.doodad :a, :rusty
+              end
+            end
+            it do
+              # Expect it to invoke a preset on the subtemplate
+              expect{ subject }.to raise_error
             end
           end
         end
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :shiny
-            t.doodad :shiny
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([{:gizmo => "shiny #{value}"}, {:gizmo => "shiny #{value}"}])
-        end
-      end
-      context "with an integer value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad 1
-            t.doodad 2
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([{}, {}, {}])
-        end
-      end
-      context "with a block value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad { |d| d.gizmo value }
-            t.doodad { |d| d.gizmo value }
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([{ :gizmo => value }, { :gizmo => value }])
-        end
-      end
-    end
-    context "with an alias" do
-      before do
-        Olfactory.template :widget do |t|
-          t.embeds_many :doodad, :alias => :foo
-        end
-        Olfactory.template :doodad do |t|
-          t.has_one :gizmo
-        end
-      end
-      context "given no value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.foo
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([{}])
-        end
-      end
-    end
-    context "with singular" do
-      before do
-        Olfactory.template :widget do |t|
-          t.embeds_many :doodad, :singular => :dood
-        end
-        Olfactory.template :doodad do |t|
-          t.has_one :gizmo
-        end
-      end
-      context "given no value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.dood
-          end
-        end
-        it do
-          expect(subject[:doodad]).to eq([{}])
-        end
-      end
-    end
-    context "as named" do
-      before do
-        Olfactory.template :widget do |t|
-          t.embeds_many :doodad, :named => true
-        end
-        Olfactory.template :doodad do |t|
-          t.has_one :gizmo
-        end
-      end
-      context "given a name & no value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :one
-          end
-        end
-        it do
-          expect(subject[:doodad][:one]).to eq({})
-        end
-      end
-      context "given a name & block value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad :one do |d|
-              d.gizmo value
+        context "given a name & block value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad :a do |d|
+                d.gizmo value
+              end
             end
           end
-        end
-        it do
-          expect(subject[:doodad][:one]).to eq({ :gizmo => value })
-        end
-      end
-      context "given a no name" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad
+          it do
+            expect(subject[:doodads]).to eq({ :a => { :gizmo => value }})
           end
         end
-        it do
-          expect { subject }.to raise_error
-        end
-      end
-      context "given a no name & numeric value" do
-        subject do
-          Olfactory.build_template :widget do |t|
-            t.doodad 1
+        context "given a no name" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad
+            end
+          end
+          it do
+            expect { subject }.to raise_error
           end
         end
-        it do
-          expect { subject }.to raise_error
+        context "given a no name & numeric value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodad 1
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq({ 1 => {} })
+          end
+        end
+      end
+      context "invoked as plural" do
+        context "given a hash value" do
+          subject do
+            Olfactory.build_template :widget do |t|
+              t.doodads :a => value
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq(nil)
+          end
         end
       end
     end
     context "with template name" do
       before do
         Olfactory.template :widget do |t|
-          t.embeds_many :doodads, :template => :doodad
+          t.embeds_many :doodads, :singular => :doodad,
+                                  :template => :thingamabob
         end
-        Olfactory.template :doodad do |t|
+        Olfactory.template :thingamabob do |t|
           t.has_one :gizmo
         end
       end
       context "given no value" do
         subject do
           Olfactory.build_template :widget do |t|
-            t.doodads
+            t.doodad
           end
         end
         it do

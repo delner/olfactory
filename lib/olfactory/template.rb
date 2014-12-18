@@ -33,39 +33,131 @@ module Olfactory
     def can_set_field?(meth)
       !(self.default_mode && self.has_key?(meth))
     end
+    def extract_variable_name(args)
+      variable_name = args.first
+      raise "Must provide a name when adding to a named field!" if variable_name.nil?
+      variable_name
+    end
     def populate_field(field_definition, meth, args, block)
-      variable_name = field_definition[:named] ? args.first : nil
-      args = variable_name ? args[1..(args.size-1)] : args
-      if field_definition[:named] && (variable_name.nil? || variable_name.class <= Numeric)
-        raise "Must provide a name when adding to a named field!"
-      end
-
       if field_definition[:type] == :macro
         field_value = build_macro(field_definition, args, block)
-      elsif field_definition[:type] == :subtemplate && can_set_field?(field_definition[:name])
+        do_not_set_value = true
+      elsif field_definition[:type] == :subtemplate && can_set_field?(meth)
         subtemplate_name = field_definition.has_key?(:template) ? field_definition[:template] : field_definition[:name]
-        if subtemplate_definition = Olfactory.templates[subtemplate_name]
-          field_value = build_subtemplate(subtemplate_definition, args, block, :named => field_definition[:named])
+        subtemplate_definition = Olfactory.templates[subtemplate_name]
+        subtemplate_definition ||= Olfactory.templates[field_definition[:singular]]
+        if subtemplate_definition
+          if field_definition[:collection] && field_definition[:collection] <= Array
+            # Embeds many
+            if meth == field_definition[:singular]
+              # Singular
+              grammar = :singular
+              preset_name = args.first
+
+              field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
+            else
+              # Plural
+              grammar = :plural
+              quantity = args.detect { |value| value.class <= Integer }
+              preset_name = args.detect { |value| value != quantity }
+
+              field_value = build_many_subtemplates(subtemplate_definition, quantity, preset_name, block)
+              do_not_set_value if field_value.nil?
+            end
+          elsif field_definition[:collection] && field_definition[:collection] <= Hash
+            # Embeds many named
+            if meth == field_definition[:singular]
+              # Singular
+              grammar = :singular
+              variable_name = extract_variable_name(args)
+              args = args[1..(args.size-1)]
+              preset_name = args.first
+              
+              field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
+              do_not_set_value if field_value.nil? # || field_value.empty?
+            else
+              # Plural
+              grammar = :plural
+              do_not_set_value = true
+              # UNSUPPORTED
+            end
+          else
+            # Embeds one
+            preset_name = args.first
+
+            field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
+            do_not_set_value if field_value.nil?
+          end
+        else
+          raise "Could not find a template matching '#{subtemplate_name}'!"
         end
-        field_value
-      elsif field_definition[:type] == :item && can_set_field?(field_definition[:name])
-        field_value = build_item(field_definition, args, block)
+      elsif field_definition[:type] == :item && can_set_field?(meth)
+        if field_definition[:collection] && field_definition[:collection] <= Array
+          # Has many
+          if meth == field_definition[:singular]
+            # Singular
+            grammar = :singular
+            obj = args.count == 1 ? args.first : args
+            
+            field_value = build_one_item(field_definition, obj, block)
+            do_not_set_value = true if field_value.nil?
+          else
+            # Plural
+            grammar = :plural
+            quantity = args.first if block && args.first.class <= Integer
+            arr = args.first if args.count == 1 && args.first.class <= Array
+
+            field_value = build_many_items(field_definition, quantity, arr, args, block)
+            do_not_set_value = true if field_value.empty?
+          end
+        elsif field_definition[:collection] && field_definition[:collection] <= Hash
+          # Has many named
+          if meth == field_definition[:singular]
+            # Singular
+            grammar = :singular
+            variable_name = extract_variable_name(args)
+            args = args[1..(args.size-1)]
+            obj = args.first
+
+            field_value = build_one_item(field_definition, obj, block)
+            do_not_set_value = true if field_value.nil?
+          else
+            # Plural
+            grammar = :plural
+            hash = args.first if args.first.class <= Hash
+
+            # Hash
+            if hash
+              field_value = hash
+            end
+            do_not_set_value = true if field_value.nil? || field_value.empty?
+          end
+        else
+          # Has one
+          obj = args.first
+            
+          field_value = build_one_item(field_definition, obj, block)
+        end
       else
-        ignore = true
+        do_not_set_value = true
       end
 
       # Add field value to template
-      if !ignore && field_definition[:type] && field_definition[:type] != :macro
+      if !do_not_set_value
         if field_definition[:collection]
           self[field_definition[:name]] ||= field_definition[:collection].new
           if field_definition[:collection] <= Array
-            if field_definition[:type] == :subtemplate && field_value.class <= Array
+            if grammar == :plural
               self[field_definition[:name]].concat(field_value)
-            else
+            elsif grammar == :singular
               self[field_definition[:name]] << field_value
             end
-          elsif field_definition[:collection] <= Hash && variable_name
-            self[field_definition[:name]][variable_name] = field_value
+          elsif field_definition[:collection] <= Hash
+            if grammar == :plural
+              self[field_definition[:name]].merge!(field_value)
+            elsif grammar == :singular
+              self[field_definition[:name]][variable_name] = field_value
+            end
           end
         else
           self[field_definition[:name]] = field_value
@@ -100,34 +192,51 @@ module Olfactory
         macro_definition[:evaluator].call(self, *args)
       end
     end
-    def build_subtemplate(subtemplate_definition, args, block, settings = {})
+    def build_one_subtemplate(subtemplate_definition, preset_name, block)
+      # Block
       if block
-        quantity = (args.detect { |value| value.class <= Integer } || 1)
-        if quantity > 1
-          Array.new(quantity) { subtemplate_definition.build(block, :transients => self.transients) }
-        else
-          subtemplate_definition.build(block, :transients => self.transients)
-        end
+        subtemplate_definition.build(block, :transients => self.transients)
+      # Preset Name
+      elsif preset_name
+        subtemplate_definition.build_preset(preset_name, 1, :transients => self.transients)
+      # Default (nothing)
       else
-        preset_name = args.detect { |value| !(value.class <= Integer) }
-        quantity = (args.detect { |value| value.class <= Integer } || 1)
-
-        if settings[:named] && quantity > 1
-          raise "Cannot specify a quantity for a named set of items: names of generated items would be ambiguous."
-        end
-
-        subtemplate_definition.build_preset(preset_name, quantity, :transients => self.transients)
+        subtemplate_definition.build(nil, :transients => self.transients)
       end
     end
-    def build_item(item_definition, args, block)
-      if block
-        block.call(*args)
+    def build_many_subtemplates(subtemplate_definition, quantity, preset_name, block)
+      # Integer, Block
+      if quantity && block
+        Array.new(quantity) { subtemplate_definition.build(block, :transients => self.transients) }
+      # Integer, Preset Name
+      elsif quantity && preset_name
+        subtemplate_definition.build_preset(preset_name, quantity, :transients => self.transients)
+      # Integer
+      elsif quantity
+        Array.new(quantity) { subtemplate_definition.build(nil, :transients => self.transients) }
       else
-        if item_definition[:evaluator]
-          item_definition[:evaluator].call(*args)
-        else
-          args.count == 1 ? args.first : args
-        end
+        nil
+      end
+    end
+    def build_one_item(item_definition, obj, block)
+      if block
+        block.call
+      elsif obj
+        obj
+      else
+        nil
+      end
+    end
+    def build_many_items(item_definition, quantity, arr, args, block)
+      # Integer, Block
+      if quantity && block
+        Array.new(quantity) { block.call }
+      # Array
+      elsif arr
+        arr
+      # Object, Object...
+      else
+        args
       end
     end
   end
