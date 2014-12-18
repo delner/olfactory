@@ -40,13 +40,13 @@ Instead, we can use templates to simplify our definitions:
 context "networkable people" do
   let(:user_group) do
     Olfactory.create_template :user_group do |group|
-      group.user :desktop_user { |user| user.phone { |phone| phone.app :facebook, :twitter } }
+      group.user :desktop_user { |user| user.phone { |phone| phone.apps :facebook, :twitter } }
       group.user :tablet_user { |user| user.tablet { |tablet| tablet.app :facebook } }
       group.user :phone_user { |user| user.desktop { |desktop| desktop.app :twitter } }
     end
   end
-  
-  it { expect(user_group[:desktop_user].can_network_with(user_group[:tablet_user], user_group[:phone_user]).to be_true }
+  subject { user_group[:users] }
+  it { expect(subject[:desktop_user].can_network_with(subject[:tablet_user], subject[:phone_user]).to be_true }
 end
 ```
 
@@ -62,33 +62,97 @@ Templates are defined in `spec/templates/**/*.rb` files. Define a template using
 
 ##### #has_one
 
-Defines a placeholder for a single field using `#has_one`:
+Defines a placeholder for field containing a single object.
 
+Definition:
+> .has_one :name [, :alias => :alias_name]
+
+When using:
+> .name|alias_name object|&block
+
+Sample:
+
+    # Template definition
     Olfactory.template :computer do |t|
       t.has_one :keyboard
       t.has_one :cpu
     end
-
-Creates:
-
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      c.keyboard "X4 Sidewinder"
+      c.cpu { FactoryGirl::build(:cpu) }
+    end
+    # Result
     {
-      :keyboard => (Some object...),
-      :cpu => (Some object...)
+      :keyboard => "X4 Sidewinder",
+      :cpu => <Cpu>
+    }
+    
+Specify an alias using `:alias => <name>`:
+
+    # Template definition
+    Olfactory.template :computer do |t|
+      t.has_one :cpu, :alias => :processor
+    end
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      c.processor "Intel Xeon"
+    end
+    # Result
+    {
+      :cpu => "Intel Xeon"
     }
 
 ##### #has_many
 
-Defines a placeholder for a collection field using `#has_many`:
+Defines a placeholder for a collection of objects. Each invocation appends the resulting items to the collection.
 
-    Olfactory.template :cpu do |t|
-      t.has_many :cpu_core
+Definition:
+> has_many :name [, :alias => :alias_name,
+>                   :singular => :singular_name,
+>                   :named => true|false]
+
+When using:
+> name|alias_name|singular_name [object|&block|(quantity &block)]
+
+Sample:
+
+    # Template definition
+    Olfactory.template :computer do |t|
+      t.has_many :cpu
+      t.has_many :memory_sticks, :singular => :memory_stick
+      t.has_many :drives, :named => true
+      t.has_many :usb_ports
     end
-
-Creates:
-
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      c.cpu "Intel i7"
+      c.cpu "Onboard graphics"
+      c.memory_stick "2GB"
+      c.memory_stick "2GB"
+      c.drives :ssd "Seagate"
+      c.drives :optical "Memorex"
+      c.usb_ports 3 do
+        "2.0"
+      end
+      c.usb_ports 3 do
+        "3.0"
+      end
+    end
+    # Result
     {
-      :cpu_core => [(Some object...), (Some object...)]
+      :cpu => ["Intel i7", "Onboard graphics"],
+      :memory_sticks => ["2GB", "2GB"],
+      :drives => {
+        :ssd => "Seagate",
+        :optical => "Memorex"
+      },
+      :usb_ports => ["2.0", "2.0", "2.0", "3.0", "3.0", "3.0"]
     }
+    
+- `:singular` works exactly the same as an alias (in a future update, this will only append a single object to the collection.)
+- `:named` converts the collection to a `Hash`. When true, all invocations must provide a name (first argument.)
+- Invoking with an integer value and a block will enumerate the result of that block N times, and add it to the collection.
     
 ##### #embeds_one
 
