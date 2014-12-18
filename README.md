@@ -65,10 +65,10 @@ Templates are defined in `spec/templates/**/*.rb` files. Define a template using
 Defines a placeholder for field containing a single object.
 
 Definition:
-> .has_one :name [, :alias => :alias_name]
+> **has_one** :name *[, :alias => :alias_name]*
 
 When using:
-> .name|alias_name object|&block
+> **name|alias_name** object|&block
 
 Sample:
 
@@ -108,12 +108,12 @@ Specify an alias using `:alias => <name>`:
 Defines a placeholder for a collection of objects. Each invocation appends the resulting items to the collection.
 
 Definition:
-> has_many :name [, :alias => :alias_name,
+> **has_many** :name *[, :alias => :alias_name,
 >                   :singular => :singular_name,
->                   :named => true|false]
+>                   :named => true|false]*
 
 When using:
-> name|alias_name|singular_name [object|&block|(quantity &block)]
+> **name|alias_name|singular_name** object|&block|(quantity &block)
 
 Sample:
 
