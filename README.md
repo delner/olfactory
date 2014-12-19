@@ -355,11 +355,11 @@ Sample:
     
 ##### #macro
  
-**TODO: Fill in this section...**
+*TODO: Fill in this section...*
 
 ##### #transient
  
-**TODO: Fill in this section...**
+*TODO: Fill in this section...*
 
 ##### Defaults: #before & #after
 
@@ -367,6 +367,7 @@ Defines default values, which are used to fill in any empty `has`, `embeds` or `
 
 Definition:
 > **before** { |instance| &block }
+> 
 > **after** { |instance| &block }
 
 Sample:
