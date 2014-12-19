@@ -1,6 +1,9 @@
 Olfactory
 ==========
 
+[![Build Status](https://travis-ci.org/StreetEasy/olfactory.svg?branch=master)](https://travis-ci.org/StreetEasy/olfactory) ![Gem Version](https://badge.fury.io/rb/olfactory.svg)
+###### *For Ruby 1.9.3, 2.0.0, 2.1.0*
+
 ### Introduction
 
 Olfactory is a factory extension for creating complex object sets, as a supplement to `factory_girl`, `fabrication`, or other factories.
