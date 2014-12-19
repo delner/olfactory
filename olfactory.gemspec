@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.email       = 'david@davidelner.com'
   s.files       = `git ls-files`.split("\n")
   s.test_files  = `git ls-files -- {spec,features,gemfiles}/*`.split("\n")
-  s.homepage    = 'https://github.com/StreetEasy/olfactory'
+  s.homepage    = 'https://github.com/delner/olfactory'
   s.license     = 'MIT'
 
   s.require_paths = ['lib']
