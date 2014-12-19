@@ -878,6 +878,203 @@ describe Olfactory::Template do
       end
     end
   end
+  context "when created" do
+    let(:value) { "saveable string" }
+    context "containing a saveable object" do
+      before do
+        Olfactory.template :widget do |t|
+          t.has_one :doodad
+        end
+      end
+      
+      subject do
+        Olfactory.create_template :widget do |w|
+          w.doodad SaveableString.new(value)
+        end
+      end
+      it do
+        expect(subject[:doodad].saved?).to be true
+      end
+    end
+    context "containing a generic collection of saveable objects" do
+      before do
+        Olfactory.template :widget do |t|
+          t.has_many :doodads
+        end
+      end
+      subject do
+        Olfactory.create_template :widget do |w|
+          w.doodads SaveableString.new(value), SaveableString.new(value)
+        end
+      end
+      it { expect(subject[:doodads].first.saved?).to be true }
+      it { expect(subject[:doodads].last.saved?).to be true }
+    end
+    context "containing a named collection of saveable objects" do
+      before do
+        Olfactory.template :widget do |t|
+          t.has_many :doodads, :named => true
+        end
+      end
+      subject do
+        Olfactory.create_template :widget do |w|
+          w.doodads :a => SaveableString.new(value), :b => SaveableString.new(value)
+        end
+      end
+      it { expect(subject[:doodads][:a].saved?).to be true }
+      it { expect(subject[:doodads][:b].saved?).to be true }
+    end
+    context "with an embedded template" do
+      before do
+        Olfactory.template :widget do |t|
+          t.embeds_one :doodad
+        end
+      end
+      context "containing a saveable object" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_one :gizmo
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad { |d| d.gizmo SaveableString.new(value) }
+          end
+        end
+        it { expect(subject[:doodad][:gizmo].saved?).to be true }
+      end
+      context "containing a generic collection of saveable objects" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_many :gizmos
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad { |d| d.gizmos SaveableString.new(value), SaveableString.new(value) }
+          end
+        end
+        it { expect(subject[:doodad][:gizmos].first.saved?).to be true }
+        it { expect(subject[:doodad][:gizmos].last.saved?).to be true }
+      end
+      context "containing a named collection of saveable objects" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_many :gizmos, :named => true
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad { |d| d.gizmos :a => SaveableString.new(value), :b => SaveableString.new(value) }
+          end
+        end
+        it { expect(subject[:doodad][:gizmos][:a].saved?).to be true }
+        it { expect(subject[:doodad][:gizmos][:b].saved?).to be true }
+      end
+    end
+    context "with a generic collection of embedded templates" do
+      before do
+        Olfactory.template :widget do |t|
+          t.embeds_many :doodads, :singular => :doodad
+        end
+      end
+      context "containing a saveable object" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_one :gizmo
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad { |d| d.gizmo SaveableString.new(value) }
+          end
+        end
+        it { expect(subject[:doodads].first[:gizmo].saved?).to be true }
+      end
+      context "containing a generic collection of saveable objects" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_many :gizmos
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad { |d| d.gizmos SaveableString.new(value), SaveableString.new(value) }
+          end
+        end
+        it { expect(subject[:doodads].first[:gizmos].first.saved?).to be true }
+        it { expect(subject[:doodads].first[:gizmos].last.saved?).to be true }
+      end
+      context "containing a named collection of saveable objects" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_many :gizmos, :named => true
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad { |d| d.gizmos :a => SaveableString.new(value), :b => SaveableString.new(value) }
+          end
+        end
+        it { expect(subject[:doodads].first[:gizmos][:a].saved?).to be true }
+        it { expect(subject[:doodads].first[:gizmos][:b].saved?).to be true }
+      end
+    end
+    context "with a named collection of embedded templates" do
+      before do
+        Olfactory.template :widget do |t|
+          t.embeds_many :doodads, :singular => :doodad, :named => true
+        end
+      end
+      context "containing a saveable object" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_one :gizmo
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad :one do |d|
+              d.gizmo SaveableString.new(value)
+            end
+          end
+        end
+        it { expect(subject[:doodads][:one][:gizmo].saved?).to be true }
+      end
+      context "containing a generic collection of saveable objects" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_many :gizmos
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad :one do |d|
+              d.gizmos SaveableString.new(value), SaveableString.new(value)
+            end
+          end
+        end
+        it { expect(subject[:doodads][:one][:gizmos].first.saved?).to be true }
+        it { expect(subject[:doodads][:one][:gizmos].last.saved?).to be true }
+      end
+      context "containing a named collection of saveable objects" do
+        before do
+          Olfactory.template :doodad do |t|
+            t.has_many :gizmos, :named => true
+          end
+        end
+        subject do
+          Olfactory.create_template :widget do |w|
+            w.doodad :one do |d|
+              d.gizmos :a => SaveableString.new(value), :b => SaveableString.new(value)
+            end
+          end
+        end
+        it { expect(subject[:doodads][:one][:gizmos][:a].saved?).to be true }
+        it { expect(subject[:doodads][:one][:gizmos][:b].saved?).to be true }
+      end
+    end
+  end
 end
 
 

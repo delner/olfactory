@@ -22,6 +22,23 @@ module Olfactory
       self
     end
 
+    def save!
+      # Items, then subtemplates
+      [self.definition.t_items, self.definition.t_subtemplates].each do |field_group_definitions|
+        field_group_definitions.each do |field_name, field_definition|
+          if field_value = self[field_name]
+            if field_definition[:collection] && field_definition[:collection] <= Array
+              field_value.each { |value| value.save! if value.respond_to?(:save!) }
+            elsif field_definition[:collection] && field_definition[:collection] <= Hash
+              field_value.values.each { |value| value.save! if value.respond_to?(:save!) }
+            else
+              field_value.save! if field_value.respond_to?(:save!)
+            end
+          end
+        end
+      end
+    end
+
     def method_missing(meth, *args, &block)
       # Explicit fields
       if field_definition = self.definition.find_field_definition(meth)
@@ -148,21 +165,22 @@ module Olfactory
           self[field_definition[:name]] ||= field_definition[:collection].new
           if field_definition[:collection] <= Array
             if grammar == :plural
-              self[field_definition[:name]].concat(field_value)
+              return_value = self[field_definition[:name]].concat(field_value)
             elsif grammar == :singular
-              self[field_definition[:name]] << field_value
+              return_value = self[field_definition[:name]] << field_value
             end
           elsif field_definition[:collection] <= Hash
             if grammar == :plural
-              self[field_definition[:name]].merge!(field_value)
+              return_value = self[field_definition[:name]].merge!(field_value)
             elsif grammar == :singular
-              self[field_definition[:name]][variable_name] = field_value
+              return_value = self[field_definition[:name]][variable_name] = field_value
             end
           end
         else
-          self[field_definition[:name]] = field_value
+          return_value = self[field_definition[:name]] = field_value
         end
       end
+      return_value
     end
     def transient(name, value)
       self.transients[name] = value if !(self.default_mode && self.transients.has_key?(name))
