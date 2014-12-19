@@ -20,4 +20,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency("pry", "~> 0.10")
   s.add_development_dependency("pry-nav", "~> 0.2")
   s.add_development_dependency("pry-stack_explorer", "~> 0.4.9")
+  s.add_development_dependency('rake', '~> 10.0.4')
+  s.add_development_dependency('yard', '~> 0.8.7.6')
 end
