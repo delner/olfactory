@@ -354,12 +354,73 @@ Sample:
     }
     
 ##### #macro
- 
-*TODO: Fill in this section...*
+
+Similar to a preset, `macro` defines a 'function' that can be used within a template, which can accept parameters, and set variables or invoke code. The result of this macro will *not* be stored on the resulting template. 
+
+Definition:
+> **macro** :name { |instance, *args..| &block }
+
+When using:
+> **name** arg1, arg2...
+
+Sample:
+
+    # Template defintion
+    Olfactory.template :computer do |t|
+      t.has_one :memory_size
+      t.macro :memory_sticks do |d, num|
+        d.memory_size "{num*4}GB"
+      end
+    end
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      c.memory_sticks 2
+    end
+    # Result 
+    {
+      :memory_size => "8GB"
+    }
 
 ##### #transient
  
-*TODO: Fill in this section...*
+Similar to `factory_girl`'s transients, `transient` defines a temporary variable. You can store values in here to compose conditional logic or more sophisticated templates. When a template contains an embedded template, it will pass down all of its transients to the embedded template. Invoking `transients` on an instance of a template will return a hash of its transient variables.
+
+Usage:
+> **transient** name, Object
+> 
+> **transients**[name]
+
+Sample:
+
+    # Template defintion
+    Olfactory.template :computer do |t|
+      t.has_one :memory_size
+      t.embeds_one :cpu
+      t.macro :memory_sticks do |d, num|
+        d.memory_size "{num*(d.transients[:memory_stick_size] || 4)}GB"
+      end
+      t.macro :memory_stick_size do |m, size|
+        t.transient :memory_stick_size, size
+      end
+    end
+    Olfactory.template :cpu do |t|
+      t.has_one :available_memory
+    end
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      c.memory_stick_size 2
+      c.memory_sticks 2
+      c.cpu do |cpu|
+        cpu.memory_module_size "#{cpu.transients[:memory_stick_size]}GB"
+      end
+    end
+    # Result
+    {
+      :memory_size => "4GB",
+      :cpu => {
+                :memory_module_size => "2GB"
+              }
+    }
 
 ##### Defaults: #before & #after
 
@@ -381,15 +442,6 @@ Sample:
         d.memory_size "4GB"
       end
     end
-    Olfactory.template :phone do |t|
-      t.has_one :cpu
-      t.has_one :memory_size
-      t.after do |d|
-        d.cpu "ARM"
-        d.memory_size "2GB"
-      end
-    end
-    
     # Build instance of template
     Olfactory.build_template :computer do |c|
       c.cpu "AMD Athlon"
@@ -400,6 +452,15 @@ Sample:
       :memory_size => "4GB"
     }
     
+    # Template defintion
+    Olfactory.template :phone do |t|
+      t.has_one :cpu
+      t.has_one :memory_size
+      t.after do |d|
+        d.cpu "ARM"
+        d.memory_size "2GB"
+      end
+    end
     # Build instance of template
     Olfactory.build_template :phone do |c|
       c.memory_size "1GB"
