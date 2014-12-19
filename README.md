@@ -3,15 +3,16 @@ Olfactory
 
 ### Introduction
 
-Olfactory is a factory extension for creating complex object sets, as a supplement to *factory_girl*, *fabrication*, or other factories.
+Olfactory is a factory extension for creating complex object sets, as a supplement to `factory_girl`, `fabrication`, or other factories.
 
-It introduces the concept of **templates**: an abstract group of objects. These can be used to make test setup much quicker and easier.
+It introduces the concept of **templates**: an abstract group of objects. You define what objects (or other templates) your template can contain (not unlike a factory), then you can create instances of it by invoking the build or create functions. These templates can be used to make test setup much quicker and easier. Templates are not intended to replace factories, but bridge the gap where `factory_girl` and `fabrication` factories fall short.
 
-Templates are not intended to replace most factories, but supplement them. They are most useful when:
- - Subjects are weakly related or non-relational (e.g. not joined by ActiveRecord associations)
- - You require a collection of objects that are not directly related (or easily built using factories)
- - You'd prefer short-hand notation, or to abstract Factory implementation out of your tests
-   - e.g. Define a set of generic factories other programmers can use, without requiring them to understand the underlying details
+They are most useful when:
+ - Your models are weakly related or non-relational (e.g. not joined by ActiveRecord associations)
+ - You require a collection of objects that are not directly related (or easily built using factories & associations)
+ - You'd prefer short-hand notation
+ - You'd like to abstract Factory implementation out of your tests
+   - e.g. Define a set of generic factories other programmers can use, without requiring them to understand the underlying class or relational structure.
 
 For example, given:
 ```ruby
@@ -35,7 +36,7 @@ end
 
 This is a lot of setup for a simple test case. We could write a bunch of named factories, but then the test logic simply ends up in a factory file rather than our test; not good.
 
-Instead, we can use templates to simplify our definitions:
+Instead, we can use templates to define shorthand notation:
 ```ruby
 context "networkable people" do
   let(:user_group) do
@@ -60,12 +61,19 @@ Templates are defined in `spec/templates/**/*.rb` files. Define a template using
       ...
     end
 
+Once defined, these templates can be instantiated using `build_template` and `create_template`, which are analogous to the same `factory_girl`/`fabrication` methods
+
+    Olfactory.build_template :computer # Creates objects, but does not implictly save them
+    Olfactory.create_template :computer # Creates objects, and attempts to save all items that respond to #save!
+
 ##### #has_one
 
-Defines a placeholder for field containing a single object.
+Defines a field containing a single object.
 
 Definition:
-> **has_one** :name *[, :alias => :alias_name]*
+> **has_one** :name *[, :alias => alias_name]*
+
+- `:alias` defines an alias keyword for setting the item value.
 
 When using:
 > **name|alias_name** object|&block
@@ -75,178 +83,328 @@ Sample:
     # Template definition
     Olfactory.template :computer do |t|
       t.has_one :keyboard
-      t.has_one :cpu
-    end
-    # Build instance of template
-    Olfactory.build_template :computer do |c|
-      c.keyboard "X4 Sidewinder"
-      c.cpu { FactoryGirl::build(:cpu) }
-    end
-    # Result
-    {
-      :keyboard => "X4 Sidewinder",
-      :cpu => <Cpu>
-    }
-    
-Specify an alias using `:alias => <name>`:
-
-    # Template definition
-    Olfactory.template :computer do |t|
+      t.has_one :mouse
       t.has_one :cpu, :alias => :processor
     end
     # Build instance of template
     Olfactory.build_template :computer do |c|
+      c.keyboard "X4 Sidewinder"
+      c.mouse { FactoryGirl::build(:mouse) }
       c.processor "Intel Xeon"
     end
     # Result
     {
+      :keyboard => "X4 Sidewinder",
+      :mouse => <Mouse>,
       :cpu => "Intel Xeon"
     }
 
 ##### #has_many
 
-Defines a placeholder for a collection of objects. Each invocation appends the resulting items to the collection.
+Defines a collection of objects. Each invocation appends the resulting items to the collection. Collection is `nil` by default (if no items are added.)
 
 Definition:
-> **has_many** :name *[, :alias => :alias_name,
->                   :singular => :singular_name,
+> **has_many** :name *[, :alias => alias_name,
+>                   :singular => singular_name,
 >                   :named => true|false]*
 
-When using:
-> **name|alias_name|singular_name** object|&block|(quantity &block)
+- `:alias` defines an alias keyword for adding mutiple items to the collection.
+- `:singular` defines the keyword for adding singular items to the collection.
+- `:named` converts the collection to a `Hash`. When true, all invocations must provide a name (first argument.)
+
+When using as generic collection (`named == false`):
+> Singular:
+>
+> **singular_name** Object
+> 
+> **singular_name** { &block }
+>
+> Plural:
+> 
+> **name|alias_name** quantity:Integer { &block }
+> 
+> **name|alias_name** objects:Array
+> 
+> **name|alias_name** object1, object2...
+
+When using as a named collection(`named == true`):
+> Singular:
+>
+> **singular_name** variable_name, Object
+> 
+> **singular_name** variable_name { &block }
+>
+> Plural:
+> 
+> **name|alias_name** Hash
 
 Sample:
 
     # Template definition
     Olfactory.template :computer do |t|
-      t.has_many :cpu
+      # Generic
+      t.has_many :cpus
       t.has_many :memory_sticks, :singular => :memory_stick
-      t.has_many :drives, :named => true
+      
       t.has_many :usb_ports
+      
+      # Named
+      t.has_many :drives, :singular => :drive, :named => true
     end
     # Build instance of template
     Olfactory.build_template :computer do |c|
-      c.cpu "Intel i7"
-      c.cpu "Onboard graphics"
+      # Generic
+      c.cpus "Intel i7", "Onboard graphics"
       c.memory_stick "2GB"
       c.memory_stick "2GB"
-      c.drives :ssd "Seagate"
-      c.drives :optical "Memorex"
-      c.usb_ports 3 do
+      c.usb_ports 2 do
         "2.0"
       end
-      c.usb_ports 3 do
-        "3.0"
-      end
+      c.usb_ports ["2.0", "2.0"]
+      c.usb_ports "3.0", "3.0"
+      
+      # Named
+      c.drive :ssd "Samsung"
+      c.drives { :hdd => "Seagate", :optical => "Memorex" }
     end
     # Result
     {
-      :cpu => ["Intel i7", "Onboard graphics"],
+      :cpus => ["Intel i7", "Onboard graphics"],
       :memory_sticks => ["2GB", "2GB"],
       :drives => {
-        :ssd => "Seagate",
+        :ssd => "Samsung",
+        :hdd => "Seagate",
         :optical => "Memorex"
       },
-      :usb_ports => ["2.0", "2.0", "2.0", "3.0", "3.0", "3.0"]
+      :usb_ports => ["2.0", "2.0", "2.0", "2.0", "3.0", "3.0"]
     }
-    
-- `:singular` works exactly the same as an alias (in a future update, this will only append a single object to the collection.)
-- `:named` converts the collection to a `Hash`. When true, all invocations must provide a name (first argument.)
-- Invoking with an integer value and a block will enumerate the result of that block N times, and add it to the collection.
     
 ##### #embeds_one
 
-Defines a placeholder for an embedded template using `#embeds_one`:
+Defines a field containing an embedded template.
 
+Definition:
+> **embeds_one** :name *[, :alias => alias_name, :template => template_name]*
+
+- `:alias` defines an alias keyword for setting the embedded template value.
+- `:template` defines the actual name of the template used, if it does not match the name.
+
+When using:
+> **name|alias_name** *[preset_name, { &block }]*
+
+Sample:
+
+    # Template definition
     Olfactory.template :computer do |t|
       t.embeds_one :cpu
+      t.embeds_one :gpu, :template => :cpu
     end
     Olfactory.template :cpu do |t|
-      t.has_many :cpu_core
+      t.has_many :cores
+      preset :amd do |p|
+        p.cores "AMD Core", "AMD Core"
+      end
     end
-
-Creates:
-
+    # Build instance of template
+    Olfactory.build_template :computer do |computer|
+      computer.cpu do |cpu|
+        cpu.cores "Intel Core", "Intel Core"
+      end
+      computer.gpu :amd
+    end
+    # Result
     {
       :cpu => {
-                :cpu_core => [(Some object...), (Some object...)]
+                :cpu_core => ["Intel Core", "Intel Core"]
+              },
+      :gpu => {
+                :gpu_core => ["AMD Core", "AMD Core"]
               }
     }
     
 ##### #embeds_many
 
-Defines a placeholder for an embedded template collection using `#embeds_many`:
+Defines a collection of templates. Each invocation appends the resulting templates to the collection. Collection is `nil` by default (if no templates are added.)
 
+Definition:
+> **has_many** :name *[, :alias => alias_name,
+>                   :template => template_name,
+>                   :singular => singular_name,
+>                   :named => true|false]*
+
+- `:alias` defines an alias keyword for adding mutiple templates to the collection.
+- `:template` defines the actual name of the template used, if it does not match the name.
+- `:singular` defines the keyword for adding singular templates to the collection.
+- `:named` converts the collection to a `Hash`. When true, all invocations must provide a name (first argument.)
+
+When using as generic collection (`named == false`):
+> Singular:
+>
+> **singular_name**
+> 
+> **singular_name** preset_name
+>
+> **singular_name** { &block }
+>
+> Plural:
+> 
+> **name|alias_name** quantity:Integer
+> 
+> **name|alias_name** preset_name, quantity:Integer
+> 
+> **name|alias_name** quantity:Integer, preset_name
+> 
+> **name|alias_name** quantity:Integer { &block }
+
+When using as a named collection(`named == true`):
+> Singular:
+> 
+> **singular_name** variable_name
+>
+> **singular_name** variable_name, preset_name
+> 
+> **singular_name** variable_name { &block }
+>
+> Plural:
+> 
+> (None)
+
+Sample:
+
+    # Template definition
     Olfactory.template :computer do |t|
-      t.embeds_many :cpu
+      # Generic
+      t.embeds_many :cpus, :singular => :cpu
+      t.embeds_many :drives, :singular => :drive, :named => true
     end
     Olfactory.template :cpu do |t|
-      t.has_one :cpu_core
+      # Generic
+      t.has_many :cores, :singular => :core
+      t.preset :amd do |p|
+        p.cores "AMD Core", "AMD Core"
+      end
     end
-
-Creates:
-
-    {
-      :cpu => [{
-                :cpu_core => (Some object...)
-              },
-              {
-                :cpu_core => (Some object...)
-              }]
-    }
+    Olfactory.template :drive do |t|
+      # Generic
+      t.has_one :storage_size
+      t.has_one :manufacturer
+      t.preset :samsung_512gb do |p|
+        p.storage_size 512000
+        p.manufacturer "Samsung"
+      end
+    end
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      # Generic
+      computer.cpu :amd
+      computer.cpu do |cpu|
+        cpu.cores "Intel Core", "Intel Core"
+      end
+      computer.cpus 2 # Creates 2 :cpu templates with defaults
+      computer.cpus :amd, 2
+      computer.cpus 2, :amd
+      computer.cpus 2 do |cpu|
+        cpu.cores "Intel Core", "Intel Core"
+      end
+      
+      # Named
+      computer.drive :hdd # Creates :drive template with defaults
+      computer.drive :ssd, :samsung_512gb
+      computer.drive :optical do |drive|
+        drive.manufacturer "Memorex"
+      end
+    end
 
 ##### #preset
 
-Defines a preset of values:
+Defines a preset of values.
 
+Definition:
+> **preset** :name { |instance| &block }
+
+When using:
+> Olfactory.build_template template_name, :preset => preset_name, :quantity => quantity:Integer
+
+See above sections for usage within templates.
+
+Sample:
+
+    # Template definition
     Olfactory.template :computer do |t|
-      t.embeds_many :cpu
+      t.embeds_many :cpus
       t.preset :dual_core do |p|
-        p.cpu 2
+        p.cpus 2 do |cpu|
+          cpu.core "Intel Core"
+        end
       end
     end
     Olfactory.template :cpu do |t|
       t.has_one :cpu_core
     end
-    
-Invoking `Olfactory.build_template :computer, preset: :dual_core` creates:
-
+    # Build instance of template
+    Olfactory.build_template :computer, :preset => :dual_core
+    # Result
     {
-      :cpu => [{
-                :cpu_core => (Some object...)
+      :cpus => [{
+                :cpu_core => "Intel Core"
               },
               {
-                :cpu_core => (Some object...)
+                :cpu_core => "Intel Core"
               }]
     }
     
-##### #default
+##### #macro
+ 
+**TODO: Fill in this section...**
 
-Defines default values, which are used to fill in any empty `has`, `embeds` or `transient` fields:
+##### #transient
+ 
+**TODO: Fill in this section...**
 
+##### Defaults: #before & #after
+
+Defines default values, which are used to fill in any empty `has`, `embeds` or `transient` fields, before and after respectively. They will *not* overwrite any non-nil value.
+
+Definition:
+> **before** { |instance| &block }
+> **after** { |instance| &block }
+
+Sample:
+
+    # Template defintion
     Olfactory.template :computer do |t|
-      t.embeds_many :cpu
-      t.default do |d|
-        d.cpu 1
+      t.has_one :cpu
+      t.has_one :memory_size
+      t.before do |d|
+        d.cpu "Intel Xeon"
+        d.memory_size "4GB"
       end
     end
-    Olfactory.template :cpu do |t|
-      t.has_one :cpu_core
-      t.default do |d|
-        d.cpu_core "Computer core"
+    Olfactory.template :phone do |t|
+      t.has_one :cpu
+      t.has_one :memory_size
+      t.after do |d|
+        d.cpu "ARM"
+        d.memory_size "2GB"
       end
     end
-
-Invoking `Olfactory.build_template :computer` creates:
-
+    
+    # Build instance of template
+    Olfactory.build_template :computer do |c|
+      c.cpu "AMD Athlon"
+    end
+    # Result 
     {
-      :cpu => [{
-                :cpu_core => "Computer core"
-              }]
+      :cpu => "AMD Athlon",
+      :memory_size => "4GB"
     }
-
-##### Building templates
-
-Build a set of objects from a template using `Olfactory#build_template`:
-
-    Olfactory.build_template :computer
+    
+    # Build instance of template
+    Olfactory.build_template :phone do |c|
+      c.memory_size "1GB"
+    end
+    # Result 
+    {
+      :cpu => "ARM",
+      :memory_size => "1GB"
+    }
