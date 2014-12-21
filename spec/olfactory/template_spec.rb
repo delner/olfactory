@@ -744,7 +744,7 @@ describe Olfactory::Template do
             Olfactory.template :building do |t|
               t.has_one :address
               t.sequence :address, :scope => :template do |n, options|
-                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+                "#{(2*n) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
               end
             end
           end
@@ -769,7 +769,7 @@ describe Olfactory::Template do
               Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address) do |n|
-                    "#{(n + (n % 2)) + 2} JOHN STREET"
+                    "#{(2*n) + 2} JOHN STREET"
                   end
                 end
               end
@@ -781,7 +781,7 @@ describe Olfactory::Template do
               Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address, :suffix => "ROAD") do |n, options|
-                    "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
+                    "#{(2*n) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
                   end
                 end
               end
@@ -794,7 +794,7 @@ describe Olfactory::Template do
             Olfactory.template :building do |t|
               t.has_one :address
               t.sequence :address, :scope => :template do |n, options|
-                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+                "#{(2*n) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
               end
             end
           end
@@ -818,7 +818,7 @@ describe Olfactory::Template do
             Olfactory.template :building do |t|
               t.has_one :address
               t.sequence :address, :scope => :instance do |n, options|
-                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+                "#{(2*n) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
               end
             end
           end
@@ -843,7 +843,7 @@ describe Olfactory::Template do
               Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address) do |n|
-                    "#{(n + (n % 2)) + 2} JOHN STREET"
+                    "#{(2*n) + 2} JOHN STREET"
                   end
                 end
               end
@@ -855,7 +855,7 @@ describe Olfactory::Template do
               Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address, :suffix => "ROAD") do |n, options|
-                    "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
+                    "#{(2*n) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
                   end
                 end
               end
@@ -869,7 +869,7 @@ describe Olfactory::Template do
               t.has_one :address
               t.has_one :other_address
               t.sequence :address, :scope => :instance do |n, options|
-                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+                "#{(2*n) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
               end
             end
           end
@@ -898,10 +898,10 @@ describe Olfactory::Template do
           t.has_one :even_count
           t.has_one :odd_count
           t.sequence :even, :scope => :template do |n|
-            (n + (n % 2)) + 2
+            (2*n) + 2
           end
           t.sequence :odd, :scope => :template do |n|
-            (n + (n % 2)) + 1
+            (2*n) + 1
           end
         end
       end
