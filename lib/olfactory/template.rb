@@ -281,5 +281,13 @@ module Olfactory
         args
       end
     end
+    def reset_sequences(*names)
+      names = self.sequences.keys if names.empty?
+      names.each { |name| self.sequences[name].reset }
+    end
+    def reset_dictionaries(*names)
+      names = self.dictionaries.keys if names.empty?
+      names.each { |name| self.dictionaries[name].reset }
+    end
   end
 end

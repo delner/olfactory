@@ -99,6 +99,15 @@ module Olfactory
       preset_definition
     end
 
+    def reset_sequences(*names)
+      names = self.t_sequences.keys if names.empty?
+      names.each { |name| self.t_sequences[name].reset }
+    end
+    def reset_dictionaries(*names)
+      names = self.t_dictionaries.keys if names.empty?
+      names.each { |name| self.t_dictionaries[name].reset }
+    end
+
     # Defines a value holding field
     def has_one(name, options = {}, &block)
       self.t_items[name] = {  :type => :item,

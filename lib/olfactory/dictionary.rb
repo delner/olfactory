@@ -6,5 +6,8 @@ module Olfactory
       self.name = name
       self.scope = (options[:scope] || :global)
     end
+    def reset
+      self.clear
+    end
   end
 end

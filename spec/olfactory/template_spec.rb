@@ -892,6 +892,49 @@ describe Olfactory::Template do
         end
       end
     end
+    context "after being invoked" do
+      before(:context) do
+        Olfactory.template :numbers do |t|
+          t.has_one :even_count
+          t.has_one :odd_count
+          t.sequence :even, :scope => :template do |n|
+            (n + (n % 2)) + 2
+          end
+          t.sequence :odd, :scope => :template do |n|
+            (n + (n % 2)) + 1
+          end
+        end
+      end
+      let(:first_set) do
+        Olfactory.build :numbers do |n|
+          n.even_count n.generate(:even)
+          n.even_count n.generate(:even)
+          n.odd_count n.generate(:odd)
+          n.odd_count n.generate(:odd)
+        end
+      end
+      it do
+        expect(first_set[:even_count]).to eq(4)
+        expect(first_set[:odd_count]).to eq(3)
+      end
+      context "and called to reset" do
+        before(:context) do
+          Olfactory.reset_template_sequences(:numbers)
+        end
+        let(:second_set) do
+          Olfactory.build :numbers do |n|
+            n.even_count n.generate(:even)
+            n.even_count n.generate(:even)
+            n.odd_count n.generate(:odd)
+            n.odd_count n.generate(:odd)
+          end
+        end
+        it do
+          expect(second_set[:even_count]).to eq(4)
+          expect(second_set[:odd_count]).to eq(3)
+        end
+      end
+    end
   end
   context "dictionary" do
     context "with a scope" do
@@ -996,6 +1039,99 @@ describe Olfactory::Template do
           it { expect(address_two[:street_code]).to eq(10001) }
           it { expect(address_two[:other_street_code]).to eq(10001) }
           it { expect(address_two[:another_street_code]).to eq(10002) }
+        end
+      end
+    end
+    context "after being invoked" do
+      before(:context) do
+        Olfactory.template :stuff do |t|
+          t.has_one :widget
+          t.has_one :another_widget
+          t.has_one :doodad
+          t.has_one :another_doodad
+          t.dictionary :widget_catalog, :scope => :template
+          t.dictionary :doodad_catalog, :scope => :template
+        end
+      end
+      let(:first_set) do
+        Olfactory.build :stuff do |n|
+          n.widget do
+            if n.widget_catalog["Widget"]
+              "Existing widget!"
+            else
+              n.widget_catalog["Widget"] = "New widget!"
+            end
+          end
+          n.another_widget do
+            if n.widget_catalog["Widget"]
+              "Existing widget!"
+            else
+              n.widget_catalog["Widget"] = "New widget!"
+            end
+          end
+          n.doodad do
+            if n.doodad_catalog["Doodad"]
+              "Existing doodad!"
+            else
+              n.doodad_catalog["Doodad"] = "New doodad!"
+            end
+          end
+          n.another_doodad do
+            if n.doodad_catalog["Doodad"]
+              "Existing doodad!"
+            else
+              n.doodad_catalog["Doodad"] = "New doodad!"
+            end
+          end
+        end
+      end
+      it do
+        expect(first_set[:widget]).to eq("New widget!")
+        expect(first_set[:another_widget]).to eq("Existing widget!")
+        expect(first_set[:doodad]).to eq("New doodad!")
+        expect(first_set[:another_doodad]).to eq("Existing doodad!")
+      end
+      context "and called to reset" do
+        before(:context) do
+          Olfactory.reset_template_dictionaries(:stuff)
+        end
+        let(:second_set) do
+          Olfactory.build :stuff do |n|
+            n.widget do
+              if n.widget_catalog["Widget"]
+                "Existing widget!"
+              else
+                n.widget_catalog["Widget"] = "New widget!"
+              end
+            end
+            n.another_widget do
+              if n.widget_catalog["Widget"]
+                "Existing widget!"
+              else
+                n.widget_catalog["Widget"] = "New widget!"
+              end
+            end
+            n.doodad do
+              if n.doodad_catalog["Doodad"]
+                "Existing doodad!"
+              else
+                n.doodad_catalog["Doodad"] = "New doodad!"
+              end
+            end
+            n.another_doodad do
+              if n.doodad_catalog["Doodad"]
+                "Existing doodad!"
+              else
+                n.doodad_catalog["Doodad"] = "New doodad!"
+              end
+            end
+          end
+        end
+        it do
+          expect(second_set[:widget]).to eq("New widget!")
+          expect(second_set[:another_widget]).to eq("Existing widget!")
+          expect(second_set[:doodad]).to eq("New doodad!")
+          expect(second_set[:another_doodad]).to eq("Existing doodad!")
         end
       end
     end

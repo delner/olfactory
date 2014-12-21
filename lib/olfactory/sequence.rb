@@ -17,5 +17,8 @@ module Olfactory
 
       value
     end
+    def reset
+      self[:current_seed] = self[:seed]
+    end
   end
 end

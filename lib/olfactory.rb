@@ -50,18 +50,37 @@ module Olfactory
     end
   end
 
-  def self.reload
+  def self.clear
     @@templates = {}
     @@sequences = {}
     @@dictionaries = {}
   end
-  def self.reset_sequence(name)
-    if sequence = self.sequences[name]
-      sequence[:current_seed] = sequence[:seed]
-    end
+  def self.reset
+    self.reset_sequences
+    self.reset_dictionaries
+    self.reset_template_sequences
+    self.reset_template_dictionaries
   end
   def self.reset_sequences(*names)
     names = self.sequences.keys if names.empty?
-    names.each { |name| self.reset_sequence(name) }
+    names.each do |name|
+      self.sequences[name].reset
+    end
+  end
+  def self.reset_template_sequences(template, *names)
+    if template = self.templates[template]
+      template.reset_sequences(*names)
+    end
+  end
+  def self.reset_dictionaries(*names)
+    names = self.dictionaries.keys if names.empty?
+    names.each do |name|
+      self.dictionaries[name].reset
+    end
+  end
+  def self.reset_template_dictionaries(template, *names)
+    if template = self.templates[template]
+      template.reset_dictionaries(*names)
+    end
   end
 end
