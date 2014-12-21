@@ -1,11 +1,12 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class TemplateDefinition
-    attr_accessor :t_items, :t_subtemplates, :t_macros, :t_presets, :t_before, :t_after
+    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_macros, :t_presets, :t_before, :t_after
 
     def initialize
       self.t_items = {}
       self.t_subtemplates = {}
+      self.t_sequences = {}
       self.t_macros = {}
       self.t_presets = {}
       self.t_before = {}
@@ -49,6 +50,16 @@ module Olfactory
       else quantity <= 0
         raise "Can't build 0 or less items!"
       end
+    end
+    def generate(name, options = {}, block)
+
+      if sequence = self.t_sequences[name]
+        seed = options[:seed] || sequence[:current_seed]
+        target = block || sequence[:evaluator]
+        value = target.call(seed, options.reject { |k,v| k == :seed })
+        sequence[:current_seed] += 1 if !options.has_key?(:seed)
+      end
+      value
     end
 
     def find_field_definition(name)
@@ -112,6 +123,17 @@ module Olfactory
     end
     def embeds_many(name, options = {}, &block)
       self.embeds_one(name, options.merge(:collection => (options[:named] ? Hash : Array)), &block)
+    end
+
+    # Defines a sequence
+    def sequence(name, options = {}, &block)
+      self.t_sequences[name] =  { :type => :sequence,
+                                  :name => name,
+                                  :evaluator => block,
+                                  :scope => :instance,
+                                  :seed => (options[:seed] || 0),
+                                  :current_seed => (options[:seed] || 0)
+                                }.merge(options)
     end
 
     # Defines a macro

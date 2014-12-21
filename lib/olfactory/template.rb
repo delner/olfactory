@@ -1,11 +1,12 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class Template < Hash
-    attr_accessor :definition, :transients, :default_mode
+    attr_accessor :definition, :transients, :sequences, :default_mode
 
     def initialize(definition, options = {})
       self.definition = definition
       self.transients = options[:transients] ? options[:transients].clone : {}
+      self.sequences = options[:sequences] ? options[:sequences].clone : {}
     end
 
     def build(block, options = {})
@@ -184,6 +185,21 @@ module Olfactory
     end
     def transient(name, value)
       self.transients[name] = value if !(self.default_mode && self.transients.has_key?(name))
+    end
+    def generate(name, options = {}, &block)
+      sequence_defintion = self.definition.t_sequences[name]
+      # Template scope
+      if sequence_defintion && sequence_defintion[:scope] == :template
+        value = self.definition.generate(name, options, block)
+      # Instance scope
+      elsif sequence_defintion && sequence_defintion[:scope] == :instance
+        self.sequences[name] ||= { :current_seed => (options[:seed] || sequence_defintion[:seed]) }
+        value = self.definition.generate(name, options.merge(:seed =>  self.sequences[name][:current_seed]), block)
+        self.sequences[name][:current_seed] += 1 if !options.has_key?(:seed)
+      else
+        raise "Unknown sequence '#{name}'!"
+      end
+      value
     end
     def add_defaults(mode)
       # Prevents overwrites of custom values by defaults

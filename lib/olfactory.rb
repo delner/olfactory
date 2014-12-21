@@ -4,16 +4,34 @@ require 'olfactory/template'
 
 module Olfactory
   @@templates = {}
+  @@sequences = {}
+  @@dictionaries = {}
+
+  # Getters
   def self.templates
     @@templates
   end
+  def self.sequences
+    @@sequences
+  end
+  def self.dictionaries
+    @@dictionaries
+  end
 
+  # Definitions
   def self.template(name, &block)
     new_template_definition = TemplateDefinition.new
     block.call(new_template_definition)
     self.templates[name] = new_template_definition
   end
+  def self.sequence(name, options = {}, &block)
+    sequences[name] = { :type => :sequence,
+                        :name => name,
+                        :current_seed => (options[:seed] || 0),
+                        :evaluator => block }.merge(options)
+  end
 
+  # Invocations
   def self.build_template(name, options = {}, &block)
     self.templates[name].build(block, options)
   end
@@ -22,8 +40,28 @@ module Olfactory
     template.save!
     template
   end
+  def self.generate(name, options = {}, &block)
+    if sequence = self.sequences[name]
+      seed = options.delete(:seed) || sequence[:current_seed]
+      target = block || sequence[:evaluator]
+      value = target.call(seed, options)
+      sequence[:current_seed] += 1
+    end
+    value
+  end
 
   def self.reload
     @@templates = {}
+    @@sequences = {}
+    @@dictionaries = {}
+  end
+  def self.reset_sequence(name)
+    if sequence = self.sequences[name]
+      sequence[:current_seed] = sequence[:seed]
+    end
+  end
+  def self.reset_sequences(*names)
+    names = self.sequences.keys if names.empty?
+    names.each { |name| self.reset_sequence(name) }
   end
 end
