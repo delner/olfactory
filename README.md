@@ -362,7 +362,7 @@ Sample:
     
 ###### When defining at the template level
 
-`Olfactory` sequences don't provide much benefit over other gems at the global level, but they really shine when used within templates. Sequences work exactly the same within templates, except they can be bound by `scope`, allowing the author a great deal of control over when sequences 'reset.' 
+`Olfactory` sequences don't provide much benefit over other gems at the global level, but they really shine when used within templates. Sequences work exactly the same within templates, except they can be bound by `scope`, allowing the author a great deal of control over when sequences reset.
 
 `scope` can either be `:instance`, which resets the seed for each instance of the template, or `:template`, which shares the seed across all instances of the template.
 
@@ -392,6 +392,59 @@ Sample:
     end
     # => { :serial_number => 10001, :registers => ["Register 1", "Register 2"] }
 
+##### #dictionary
+
+Defines a dictionary, which is just a simple data store (Hash.) They can be defined at the global level, or nested within a template.
+
+###### When defining at the global level
+
+Definition:
+> **Olfactory.dictionary** :name
+
+Usage:
+> **Olfactory.dictionaries**[name] # Returns Hash to read/write from
+
+Sample:
+
+    Olfactory.dictionary :manfacturer_codes
+    Olfactory.dictionaries[:manfacturer_codes]["DELL"] = "Dell Computing"
+
+###### When defining at the template level
+
+A hash data-store isn't that special at the global level, but is much more useful within templates. Definition is the same, but the usage only differs by name. Like sequences, dictionaries can define `scope` to separate or share data across templates. Combining them with sequences, we can synchronize data in some really cool ways.
+
+`scope` can either be `:instance`, which resets the hash for each instance of the template, or `:template`, which shares the hash across all instances of the template.
+
+Sample:
+
+    Olfactory.template :computer do |t|
+      t.has_one :hdd_manfacturer_code
+      t.has_one :gpu_manfacturer_code
+      t.has_one :cpu_manfacturer_code
+      t.dictionary :manfacturer_codes, :scope => :template
+      t.sequence :manfacturer_code, :scope => :template do |n|
+        (10000 + n)
+      end
+    end
+    
+    Olfactory.build :computer do |c|
+      c.hdd_manfacturer_code { c.manfacturer_codes["SAMSUNG"] ||= c.generate(:manfacturer_code) }
+      c.cpu_manfacturer_code { c.manfacturer_codes["AMD"] ||= c.generate(:manfacturer_code) }
+      c.gpu_manfacturer_code { c.manfacturer_codes["AMD"] ||= c.generate(:manfacturer_code) }
+    end
+    # => { :hdd_manfacturer_code => 10001,
+    #      :cpu_manfacturer_code => 10002,
+    #      :cpu_manfacturer_code => 10002 }
+    
+    Olfactory.build :computer do |c|
+      c.hdd_manfacturer_code { c.manfacturer_codes["SEAGATE"] ||= c.generate(:manfacturer_code) }
+      c.cpu_manfacturer_code { c.manfacturer_codes["AMD"] ||= c.generate(:manfacturer_code) }
+      c.gpu_manfacturer_code { c.manfacturer_codes["INTEL"] ||= c.generate(:manfacturer_code) }
+    end
+    # => { :hdd_manfacturer_code => 10003,
+    #      :cpu_manfacturer_code => 10002,
+    #      :cpu_manfacturer_code => 10004 }
+    
 ##### #preset
 
 Defines a preset of values.
