@@ -49,8 +49,8 @@ module Olfactory
         super # Unknown method
       end
     end
-    def can_set_field?(meth)
-      !(self.default_mode && self.has_key?(meth))
+    def can_set_field?(name)
+      !(self.default_mode && self.has_key?(name))
     end
     def extract_variable_name(args)
       variable_name = args.first
@@ -61,7 +61,7 @@ module Olfactory
       if field_definition[:type] == :macro
         field_value = build_macro(field_definition, args, block)
         do_not_set_value = true
-      elsif field_definition[:type] == :subtemplate && can_set_field?(meth)
+      elsif field_definition[:type] == :subtemplate && can_set_field?(field_definition[:name])
         subtemplate_name = field_definition.has_key?(:template) ? field_definition[:template] : field_definition[:name]
         subtemplate_definition = Olfactory.templates[subtemplate_name]
         subtemplate_definition ||= Olfactory.templates[field_definition[:singular]]
@@ -110,7 +110,7 @@ module Olfactory
         else
           raise "Could not find a template matching '#{subtemplate_name}'!"
         end
-      elsif field_definition[:type] == :item && can_set_field?(meth)
+      elsif field_definition[:type] == :item && can_set_field?(field_definition[:name])
         if field_definition[:collection] && field_definition[:collection] <= Array
           # Has many
           if meth == field_definition[:singular]
