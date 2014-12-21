@@ -43,7 +43,7 @@ Instead, we can use templates to define shorthand notation:
 ```ruby
 context "networkable people" do
   let(:user_group) do
-    Olfactory.create_template :user_group do |group|
+    Olfactory.create :user_group do |group|
       group.user :desktop_user { |user| user.phone { |phone| phone.apps :facebook, :twitter } }
       group.user :tablet_user { |user| user.tablet { |tablet| tablet.app :facebook } }
       group.user :phone_user { |user| user.desktop { |desktop| desktop.app :twitter } }
@@ -64,10 +64,10 @@ Templates are defined in `spec/templates/**/*.rb` files. Define a template using
       ...
     end
 
-Once defined, these templates can be instantiated using `build_template` and `create_template`, which are analogous to the same `factory_girl`/`fabrication` methods
+Once defined, these templates can be instantiated using `build` and `create`, which are analogous to the same `factory_girl`/`fabrication` methods
 
-    Olfactory.build_template :computer # Creates objects, but does not implictly save them
-    Olfactory.create_template :computer # Creates objects, and attempts to save all items that respond to #save!
+    Olfactory.build :computer # Creates objects, but does not implictly save them
+    Olfactory.create :computer # Creates objects, and attempts to save all items that respond to #save!
 
 ##### #has_one
 
@@ -90,7 +90,7 @@ Sample:
       t.has_one :cpu, :alias => :processor
     end
     # Build instance of template
-    Olfactory.build_template :computer do |c|
+    Olfactory.build :computer do |c|
       c.keyboard "X4 Sidewinder"
       c.mouse { FactoryGirl::build(:mouse) }
       c.processor "Intel Xeon"
@@ -155,7 +155,7 @@ Sample:
       t.has_many :drives, :singular => :drive, :named => true
     end
     # Build instance of template
-    Olfactory.build_template :computer do |c|
+    Olfactory.build :computer do |c|
       # Generic
       c.cpus "Intel i7", "Onboard graphics"
       c.memory_stick "2GB"
@@ -209,7 +209,7 @@ Sample:
       end
     end
     # Build instance of template
-    Olfactory.build_template :computer do |computer|
+    Olfactory.build :computer do |computer|
       computer.cpu do |cpu|
         cpu.cores "Intel Core", "Intel Core"
       end
@@ -297,7 +297,7 @@ Sample:
       end
     end
     # Build instance of template
-    Olfactory.build_template :computer do |c|
+    Olfactory.build :computer do |c|
       # Generic
       computer.cpu :amd
       computer.cpu do |cpu|
@@ -326,7 +326,7 @@ Definition:
 > **preset** :name { |instance| &block }
 
 When using:
-> Olfactory.build_template template_name, :preset => preset_name, :quantity => quantity:Integer
+> Olfactory.build template_name, :preset => preset_name, :quantity => quantity:Integer
 
 See above sections for usage within templates.
 
@@ -345,7 +345,7 @@ Sample:
       t.has_one :cpu_core
     end
     # Build instance of template
-    Olfactory.build_template :computer, :preset => :dual_core
+    Olfactory.build :computer, :preset => :dual_core
     # Result
     {
       :cpus => [{
@@ -376,7 +376,7 @@ Sample:
       end
     end
     # Build instance of template
-    Olfactory.build_template :computer do |c|
+    Olfactory.build :computer do |c|
       c.memory_sticks 2
     end
     # Result 
@@ -410,7 +410,7 @@ Sample:
       t.has_one :available_memory
     end
     # Build instance of template
-    Olfactory.build_template :computer do |c|
+    Olfactory.build :computer do |c|
       c.memory_stick_size 2
       c.memory_sticks 2
       c.cpu do |cpu|
@@ -446,7 +446,7 @@ Sample:
       end
     end
     # Build instance of template
-    Olfactory.build_template :computer do |c|
+    Olfactory.build :computer do |c|
       c.cpu "AMD Athlon"
     end
     # Result 
@@ -465,7 +465,7 @@ Sample:
       end
     end
     # Build instance of template
-    Olfactory.build_template :phone do |c|
+    Olfactory.build :phone do |c|
       c.memory_size "1GB"
     end
     # Result 

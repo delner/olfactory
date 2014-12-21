@@ -11,7 +11,7 @@ describe Olfactory::Template do
 
     context "given a basic value" do
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad value
         end
       end
@@ -21,7 +21,7 @@ describe Olfactory::Template do
     end
     context "given a block value" do
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad { value }
         end
       end
@@ -37,7 +37,7 @@ describe Olfactory::Template do
       end
       context "given a basic value" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.foo value
           end
         end
@@ -47,7 +47,7 @@ describe Olfactory::Template do
       end
       context "given a block value" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.foo { value }
           end
         end
@@ -74,7 +74,7 @@ describe Olfactory::Template do
       context "invoked as singular" do
         context "given a basic value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad value
             end
           end
@@ -84,7 +84,7 @@ describe Olfactory::Template do
         end
         context "given a block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad { value }
             end
           end
@@ -96,7 +96,7 @@ describe Olfactory::Template do
       context "invoked as plural" do
         context "given an integer & block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads 2 do
                 value
               end
@@ -108,7 +108,7 @@ describe Olfactory::Template do
         end
         context "given an array" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads [value, value]
             end
           end
@@ -118,7 +118,7 @@ describe Olfactory::Template do
         end
         context "given a splattered set of arguments" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads value, value
             end
           end
@@ -129,7 +129,7 @@ describe Olfactory::Template do
       end
       context "given sequential invocations" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad value
             t.doodads value, value
             t.doodad value
@@ -147,7 +147,7 @@ describe Olfactory::Template do
         end
         context "given a basic value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.foos value
             end
           end
@@ -157,7 +157,7 @@ describe Olfactory::Template do
         end
         context "given a block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.foos { value }
             end
           end
@@ -177,7 +177,7 @@ describe Olfactory::Template do
       context "invoked as singular" do
         context "given a name & basic value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad :foo, value
             end
           end
@@ -187,7 +187,7 @@ describe Olfactory::Template do
         end
         context "given a name & block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad :foo do
                 value
               end
@@ -199,7 +199,7 @@ describe Olfactory::Template do
         end
         context "given no name" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad
             end
           end
@@ -209,7 +209,7 @@ describe Olfactory::Template do
         end
         context "given no name & numeric value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad 1
             end
           end
@@ -223,7 +223,7 @@ describe Olfactory::Template do
       context "invoked as plural" do
         context "given a hash value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads :a => value
             end
           end
@@ -233,7 +233,7 @@ describe Olfactory::Template do
         end
         context "given no name or value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads
             end
           end
@@ -244,7 +244,7 @@ describe Olfactory::Template do
       end
       context "given sequential invocations" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad :a, value
             t.doodads :b => value, :c => value
             t.doodad :d, value
@@ -267,7 +267,7 @@ describe Olfactory::Template do
         end
         context "given a hash" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.foos :a => value
             end
           end
@@ -277,7 +277,7 @@ describe Olfactory::Template do
         end
         context "given a name and basic value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.foos :a, value
             end
           end
@@ -302,7 +302,7 @@ describe Olfactory::Template do
 
     context "given no value" do
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad
         end
       end
@@ -324,7 +324,7 @@ describe Olfactory::Template do
       end
       context "that matches a defined preset" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad :shiny
           end
         end
@@ -335,7 +335,7 @@ describe Olfactory::Template do
       end
       context "that does not match a defined preset" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad :rusty
           end
         end
@@ -347,7 +347,7 @@ describe Olfactory::Template do
     end
     context "given a block value" do
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad { |d| d.gizmo value }
         end
       end
@@ -366,7 +366,7 @@ describe Olfactory::Template do
       end
       context "given no value" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.foo
           end
         end
@@ -386,7 +386,7 @@ describe Olfactory::Template do
       end
       context "given no value" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad
           end
         end
@@ -419,7 +419,7 @@ describe Olfactory::Template do
       context "invoked as singular" do
         context "given no value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad
             end
           end
@@ -441,7 +441,7 @@ describe Olfactory::Template do
           end
           context "that matches a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodad :shiny
               end
             end
@@ -452,7 +452,7 @@ describe Olfactory::Template do
           end
           context "that does not match a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodad :rusty
               end
             end
@@ -464,7 +464,7 @@ describe Olfactory::Template do
         end
         context "given a block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad { |d| d.gizmo value }
             end
           end
@@ -476,7 +476,7 @@ describe Olfactory::Template do
       context "invoked as plural" do
         context "given an integer value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads 2
             end
           end
@@ -498,7 +498,7 @@ describe Olfactory::Template do
           end
           context "that matches a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodads :shiny, 2
               end
             end
@@ -509,7 +509,7 @@ describe Olfactory::Template do
           end
           context "that does not match a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodads :rusty, 2
               end
             end
@@ -533,7 +533,7 @@ describe Olfactory::Template do
           end
           context "that matches a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodads 2, :shiny
               end
             end
@@ -544,7 +544,7 @@ describe Olfactory::Template do
           end
           context "that does not match a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodads 2, :rusty
               end
             end
@@ -556,7 +556,7 @@ describe Olfactory::Template do
         end
         context "given an integer and block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads 2 do |d|
                 d.gizmo value
               end
@@ -569,7 +569,7 @@ describe Olfactory::Template do
       end
       context "given sequential invocations" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad
             t.doodads 2
             t.doodad
@@ -590,7 +590,7 @@ describe Olfactory::Template do
         end
         context "given an integer value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.foos 2
             end
           end
@@ -600,7 +600,7 @@ describe Olfactory::Template do
         end
         context "given a block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.foos { |f| f.gizmo value }
             end
           end
@@ -624,7 +624,7 @@ describe Olfactory::Template do
       context "invoked as singular" do
         context "given a name & no value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad :a
             end
           end
@@ -647,7 +647,7 @@ describe Olfactory::Template do
           end
           context "that matches a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodad :a, :shiny
               end
             end
@@ -658,7 +658,7 @@ describe Olfactory::Template do
           end
           context "that does not match a defined preset" do
             subject do
-              Olfactory.build_template :widget do |t|
+              Olfactory.build :widget do |t|
                 t.doodad :a, :rusty
               end
             end
@@ -670,7 +670,7 @@ describe Olfactory::Template do
         end
         context "given a name & block value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad :a do |d|
                 d.gizmo value
               end
@@ -682,7 +682,7 @@ describe Olfactory::Template do
         end
         context "given a no name" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad
             end
           end
@@ -692,7 +692,7 @@ describe Olfactory::Template do
         end
         context "given a no name & numeric value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodad 1
             end
           end
@@ -704,7 +704,7 @@ describe Olfactory::Template do
       context "invoked as plural" do
         context "given a hash value" do
           subject do
-            Olfactory.build_template :widget do |t|
+            Olfactory.build :widget do |t|
               t.doodads :a => value
             end
           end
@@ -726,7 +726,7 @@ describe Olfactory::Template do
       end
       context "given no value" do
         subject do
-          Olfactory.build_template :widget do |t|
+          Olfactory.build :widget do |t|
             t.doodad
           end
         end
@@ -750,7 +750,7 @@ describe Olfactory::Template do
           end
           context "given nothing" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address building.generate(:address)
               end
             end
@@ -758,7 +758,7 @@ describe Olfactory::Template do
           end
           context "given options" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address building.generate(:address, :prefix => "WEST")
               end
             end
@@ -766,7 +766,7 @@ describe Olfactory::Template do
           end
           context "given a block" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address) do |n|
                     "#{(n + (n % 2)) + 2} JOHN STREET"
@@ -778,7 +778,7 @@ describe Olfactory::Template do
           end
           context "given options and a block" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address, :suffix => "ROAD") do |n, options|
                     "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
@@ -799,13 +799,13 @@ describe Olfactory::Template do
             end
           end
           let(:building_one) do
-            Olfactory.build_template :building do |building|
+            Olfactory.build :building do |building|
               building.address { building.generate(:address) }
             end
           end
           it { expect(building_one[:address]).to eq("2 BROADWAY") }
           let(:building_two) do
-            Olfactory.build_template :building do |building|
+            Olfactory.build :building do |building|
               building.address { building.generate(:address) }
             end
           end
@@ -824,7 +824,7 @@ describe Olfactory::Template do
           end
           context "given nothing" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address building.generate(:address)
               end
             end
@@ -832,7 +832,7 @@ describe Olfactory::Template do
           end
           context "given options" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address building.generate(:address, :prefix => "WEST")
               end
             end
@@ -840,7 +840,7 @@ describe Olfactory::Template do
           end
           context "given a block" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address) do |n|
                     "#{(n + (n % 2)) + 2} JOHN STREET"
@@ -852,7 +852,7 @@ describe Olfactory::Template do
           end
           context "given options and a block" do
             subject do
-              Olfactory.build_template :building do |building|
+              Olfactory.build :building do |building|
                 building.address do
                   building.generate(:address, :suffix => "ROAD") do |n, options|
                     "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
@@ -874,7 +874,7 @@ describe Olfactory::Template do
             end
           end
           let(:building_one) do
-            Olfactory.build_template :building do |building|
+            Olfactory.build :building do |building|
               building.address building.generate(:address)
               building.other_address building.generate(:address)
             end
@@ -882,7 +882,7 @@ describe Olfactory::Template do
           it { expect(building_one[:address]).to eq("2 BROADWAY") }
           it { expect(building_one[:other_address]).to eq("4 BROADWAY") }
           let(:building_two) do
-            Olfactory.build_template :building do |building|
+            Olfactory.build :building do |building|
               building.address building.generate(:address)
               building.other_address building.generate(:address)
             end
@@ -904,7 +904,7 @@ describe Olfactory::Template do
             end
           end
           subject do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code do
                 address.street_codes["BROADWAY"] ||= 10001
               end
@@ -923,17 +923,17 @@ describe Olfactory::Template do
             end
           end
           let!(:address_one) do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
             end
           end
           let!(:address_two) do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
             end
           end
           let!(:address_three) do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code { address.street_codes["JOHN STREET"] ||= address.generate(:street_code) }
             end
           end
@@ -954,7 +954,7 @@ describe Olfactory::Template do
             end
           end
           subject do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code { address.street_codes["BROADWAY"] ||= 10001 }
               address.other_street_code { address.street_codes["BROADWAY"] ||= 10002 }
               address.another_street_code { address.street_codes["JOHN STREET"] ||= 10003 }
@@ -977,14 +977,14 @@ describe Olfactory::Template do
             end
           end
           let!(:address_one) do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
               address.other_street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
               address.another_street_code { address.street_codes["JOHN STREET"] ||= address.generate(:street_code) }
             end
           end
           let!(:address_two) do
-            Olfactory.build_template :address do |address|
+            Olfactory.build :address do |address|
               address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
               address.other_street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
               address.another_street_code { address.street_codes["JOHN STREET"] ||= address.generate(:street_code) }
@@ -1012,7 +1012,7 @@ describe Olfactory::Template do
     let(:value) { "doodad" }
 
     subject do
-      Olfactory.build_template :widget do |t|
+      Olfactory.build :widget do |t|
         t.doodad value
         t.make_shiny
       end
@@ -1031,7 +1031,7 @@ describe Olfactory::Template do
         end
       end
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad value
           t.make :very, :shiny
         end
@@ -1050,7 +1050,7 @@ describe Olfactory::Template do
     let(:value) { "temporary value"}
     context "when set" do
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.transient :foo, value
         end
       end
@@ -1060,7 +1060,7 @@ describe Olfactory::Template do
     end
     context "when read" do
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.transient :foo, value
           t.doodad "#{t.transients[:foo]}"
         end
@@ -1079,7 +1079,7 @@ describe Olfactory::Template do
         end
       end
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.transient :foo, value
           t.doodad
         end
@@ -1104,7 +1104,7 @@ describe Olfactory::Template do
         end
       end
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad value
         end
       end
@@ -1127,7 +1127,7 @@ describe Olfactory::Template do
         end
       end
       subject do
-        Olfactory.build_template :widget do |t|
+        Olfactory.build :widget do |t|
           t.doodad value
         end
       end
@@ -1149,7 +1149,7 @@ describe Olfactory::Template do
       end
       
       subject do
-        Olfactory.create_template :widget do |w|
+        Olfactory.create :widget do |w|
           w.doodad SaveableString.new(value)
         end
       end
@@ -1164,7 +1164,7 @@ describe Olfactory::Template do
         end
       end
       subject do
-        Olfactory.create_template :widget do |w|
+        Olfactory.create :widget do |w|
           w.doodads SaveableString.new(value), SaveableString.new(value)
         end
       end
@@ -1178,7 +1178,7 @@ describe Olfactory::Template do
         end
       end
       subject do
-        Olfactory.create_template :widget do |w|
+        Olfactory.create :widget do |w|
           w.doodads :a => SaveableString.new(value), :b => SaveableString.new(value)
         end
       end
@@ -1198,7 +1198,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad { |d| d.gizmo SaveableString.new(value) }
           end
         end
@@ -1211,7 +1211,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad { |d| d.gizmos SaveableString.new(value), SaveableString.new(value) }
           end
         end
@@ -1225,7 +1225,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad { |d| d.gizmos :a => SaveableString.new(value), :b => SaveableString.new(value) }
           end
         end
@@ -1246,7 +1246,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad { |d| d.gizmo SaveableString.new(value) }
           end
         end
@@ -1259,7 +1259,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad { |d| d.gizmos SaveableString.new(value), SaveableString.new(value) }
           end
         end
@@ -1273,7 +1273,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad { |d| d.gizmos :a => SaveableString.new(value), :b => SaveableString.new(value) }
           end
         end
@@ -1294,7 +1294,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad :one do |d|
               d.gizmo SaveableString.new(value)
             end
@@ -1309,7 +1309,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad :one do |d|
               d.gizmos SaveableString.new(value), SaveableString.new(value)
             end
@@ -1325,7 +1325,7 @@ describe Olfactory::Template do
           end
         end
         subject do
-          Olfactory.create_template :widget do |w|
+          Olfactory.create :widget do |w|
             w.doodad :one do |d|
               d.gizmos :a => SaveableString.new(value), :b => SaveableString.new(value)
             end

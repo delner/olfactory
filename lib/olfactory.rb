@@ -34,10 +34,10 @@ module Olfactory
   end
 
   # Invocations
-  def self.build_template(name, options = {}, &block)
+  def self.build(name, options = {}, &block)
     self.templates[name].build(block, options)
   end
-  def self.create_template(name, options = {}, &block)
+  def self.create(name, options = {}, &block)
     template = self.templates[name].build(block, options)
     template.save!
     template
