@@ -334,9 +334,13 @@ Definition:
 
 Usage:
 > **Olfactory.generate** :name
+> 
 > **Olfactory.generate** :name, :option1 => Object, :option2 => Object...
+> 
 > **Olfactory.generate** :name, :seed => Integer
+> 
 > **Olfactory.generate** :name, :seed => Integer, :option1 => Object, :option2 => Object...
+> 
 > **Olfactory.generate** :name { |iterator, options| &block }
 
  - `seed` can be provided to override whatever the current seed is. When you provide an overriding seed, the sequence will *not* increment its internal seed. (Will act like it was never called.)
