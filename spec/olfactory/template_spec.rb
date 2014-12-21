@@ -896,10 +896,107 @@ describe Olfactory::Template do
   context "dictionary" do
     context "with a scope" do
       context "bound to the template" do
-        # TODO
+        context do
+          before(:context) do
+            Olfactory.template :address do |t|
+              t.has_one :street_code
+              t.dictionary :street_codes, :scope => :template
+            end
+          end
+          subject do
+            Olfactory.build_template :address do |address|
+              address.street_code do
+                address.street_codes["BROADWAY"] ||= 10001
+              end
+            end
+          end
+          it { expect(subject[:street_code]).to eq(10001) }
+        end
+        context "given sequential invocations" do
+          before(:context) do
+            Olfactory.template :address do |t|
+              t.has_one :street_code
+              t.dictionary :street_codes, :scope => :template
+              t.sequence :street_code, :scope => :template, :seed => 1 do |n|
+                (10000 + n)
+              end
+            end
+          end
+          let!(:address_one) do
+            Olfactory.build_template :address do |address|
+              address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
+            end
+          end
+          let!(:address_two) do
+            Olfactory.build_template :address do |address|
+              address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
+            end
+          end
+          let!(:address_three) do
+            Olfactory.build_template :address do |address|
+              address.street_code { address.street_codes["JOHN STREET"] ||= address.generate(:street_code) }
+            end
+          end
+
+          it { expect(address_one[:street_code]).to eq(10001) }
+          it { expect(address_two[:street_code]).to eq(10001) }
+          it { expect(address_three[:street_code]).to eq(10002) }
+        end
       end
       context "bound to the instance" do
-        # TODO
+        context do
+          before(:context) do
+            Olfactory.template :address do |t|
+              t.has_one :street_code
+              t.has_one :other_street_code
+              t.has_one :another_street_code
+              t.dictionary :street_codes, :scope => :instance
+            end
+          end
+          subject do
+            Olfactory.build_template :address do |address|
+              address.street_code { address.street_codes["BROADWAY"] ||= 10001 }
+              address.other_street_code { address.street_codes["BROADWAY"] ||= 10002 }
+              address.another_street_code { address.street_codes["JOHN STREET"] ||= 10003 }
+            end
+          end
+          it { expect(subject[:street_code]).to eq(10001) }
+          it { expect(subject[:other_street_code]).to eq(10001) }
+          it { expect(subject[:another_street_code]).to eq(10003) }
+        end
+        context "given sequential invocations" do
+          before(:context) do
+            Olfactory.template :address do |t|
+              t.has_one :street_code
+              t.has_one :other_street_code
+              t.has_one :another_street_code
+              t.dictionary :street_codes, :scope => :instance
+              t.sequence :street_code, :scope => :instance, :seed => 1 do |n|
+                (10000 + n)
+              end
+            end
+          end
+          let!(:address_one) do
+            Olfactory.build_template :address do |address|
+              address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
+              address.other_street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
+              address.another_street_code { address.street_codes["JOHN STREET"] ||= address.generate(:street_code) }
+            end
+          end
+          let!(:address_two) do
+            Olfactory.build_template :address do |address|
+              address.street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
+              address.other_street_code { address.street_codes["BROADWAY"] ||= address.generate(:street_code) }
+              address.another_street_code { address.street_codes["JOHN STREET"] ||= address.generate(:street_code) }
+            end
+          end
+          it { expect(address_one[:street_code]).to eq(10001) }
+          it { expect(address_one[:other_street_code]).to eq(10001) }
+          it { expect(address_one[:another_street_code]).to eq(10002) }
+          it { expect(address_two[:street_code]).to eq(10001) }
+          it { expect(address_two[:other_street_code]).to eq(10001) }
+          it { expect(address_two[:another_street_code]).to eq(10002) }
+        end
       end
     end
   end

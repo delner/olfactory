@@ -1,12 +1,13 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class Template < Hash
-    attr_accessor :definition, :transients, :sequences, :default_mode
+    attr_accessor :definition, :transients, :sequences, :dictionaries, :default_mode
 
     def initialize(definition, options = {})
       self.definition = definition
       self.transients = options[:transients] ? options[:transients].clone : {}
       self.sequences = options[:sequences] ? options[:sequences].clone : {}
+      self.dictionaries = options[:dictionaries] ? options[:dictionaries].clone : {}
     end
 
     def build(block, options = {})
@@ -156,6 +157,13 @@ module Olfactory
             
           field_value = build_one_item(field_definition, obj, block)
         end
+      elsif field_definition.class == Dictionary
+        if field_definition.scope == :template
+          return_value = field_definition
+        elsif field_definition.scope == :instance
+          return_value = (self.dictionaries[meth] ||= {})
+        end
+        do_not_set_value = true
       else
         do_not_set_value = true
       end

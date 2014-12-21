@@ -1,4 +1,5 @@
 # -*- encoding : utf-8 -*-
+require 'olfactory/dictionary'
 require 'olfactory/sequence'
 require 'olfactory/template_definition'
 require 'olfactory/template'
@@ -27,6 +28,9 @@ module Olfactory
   end
   def self.sequence(name, options = {}, &block)
     sequences[name] = Sequence.new(name, options, block)
+  end
+  def self.dictionary(name)
+    dictionaries[name] = Dictionary.new(name)
   end
 
   # Invocations

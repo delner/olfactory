@@ -1,12 +1,13 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class TemplateDefinition
-    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_macros, :t_presets, :t_before, :t_after
+    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_dictionaries, :t_macros, :t_presets, :t_before, :t_after
 
     def initialize
       self.t_items = {}
       self.t_subtemplates = {}
       self.t_sequences = {}
+      self.t_dictionaries = {}
       self.t_macros = {}
       self.t_presets = {}
       self.t_before = {}
@@ -56,6 +57,7 @@ module Olfactory
       definition = find_macro_definition(name)
       definition ||= find_subtemplate_definition(name)
       definition ||= find_item_definition(name)
+      definition ||= find_dictionary_definition(name)
       definition
     end
 
@@ -81,6 +83,10 @@ module Olfactory
       definition = self.find_definition_in_list(name, self.t_items)
       definition ||= self.t_items.values.detect { |v| v.has_key?(:singular) && v[:singular] == name }
       definition
+    end
+
+    def find_dictionary_definition(name)
+      self.t_dictionaries[name]
     end
 
     def find_preset_definition(name)
@@ -117,7 +123,12 @@ module Olfactory
 
     # Defines a sequence
     def sequence(name, options = {}, &block)
-      self.t_sequences[name] =  Sequence.new(name, { :scope => :instance }.merge(options), block)
+      self.t_sequences[name] = Sequence.new(name, { :scope => :instance }.merge(options), block)
+    end
+
+    # Defines a dictionary
+    def dictionary(name, options = {})
+      self.t_dictionaries[name] = Dictionary.new(name, { :scope => :instance }.merge(options))
     end
 
     # Defines a macro

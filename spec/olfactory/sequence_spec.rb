@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "Olfactory::Sequence" do
+describe Olfactory::Sequence do
   context "with no seed" do
     before(:example) do
       Olfactory.sequence :address do |n, options|
