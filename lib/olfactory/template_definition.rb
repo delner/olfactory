@@ -123,12 +123,12 @@ module Olfactory
 
     # Defines a sequence
     def sequence(name, options = {}, &block)
-      self.t_sequences[name] = Sequence.new(name, { :scope => :instance }.merge(options), block)
+      self.t_sequences[name] = Olfactory::Sequence.new(name, { :scope => :instance }.merge(options), block)
     end
 
     # Defines a dictionary
     def dictionary(name, options = {})
-      self.t_dictionaries[name] = Dictionary.new(name, { :scope => :instance }.merge(options))
+      self.t_dictionaries[name] = Olfactory::Dictionary.new(name, { :scope => :instance }.merge(options))
     end
 
     # Defines a macro

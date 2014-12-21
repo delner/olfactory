@@ -157,7 +157,7 @@ module Olfactory
             
           field_value = build_one_item(field_definition, obj, block)
         end
-      elsif field_definition.class == Dictionary
+      elsif field_definition.class == Olfactory::Dictionary
         if field_definition.scope == :template
           return_value = field_definition
         elsif field_definition.scope == :instance

@@ -22,15 +22,15 @@ module Olfactory
 
   # Definitions
   def self.template(name, &block)
-    new_template_definition = TemplateDefinition.new
+    new_template_definition = Olfactory::TemplateDefinition.new
     block.call(new_template_definition)
     self.templates[name] = new_template_definition
   end
   def self.sequence(name, options = {}, &block)
-    sequences[name] = Sequence.new(name, options, block)
+    sequences[name] = Olfactory::Sequence.new(name, options, block)
   end
   def self.dictionary(name)
-    dictionaries[name] = Dictionary.new(name)
+    dictionaries[name] = Olfactory::Dictionary.new(name)
   end
 
   # Invocations
