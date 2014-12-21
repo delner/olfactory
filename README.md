@@ -318,6 +318,76 @@ Sample:
       end
     end
 
+##### #sequence
+
+Defines a sequence, similar to `factory_girl`'s sequences. Can be combined with `Faker` to provide auto-generated test data. They can be defined at the global level, or nested within a template.
+
+###### When defining at the global level
+
+Definition:
+> **Olfactory.sequence** :name*[, :seed => Integer]* { |iterator[,options]| &block }
+
+- `seed` defines the starting value, which increments by 1 after each invocation. Default 0.
+- `options` in the form of hash args can be passed to the block.
+- `iterator` is the current seed, which starts at 0 by default.
+- `block` generates and returns the value.
+
+Usage:
+> **Olfactory.generate** :name
+> **Olfactory.generate** :name, :option1 => Object, :option2 => Object...
+> **Olfactory.generate** :name, :seed => Integer
+> **Olfactory.generate** :name, :seed => Integer, :option1 => Object, :option2 => Object...
+> **Olfactory.generate** :name { |iterator, options| &block }
+
+ - `seed` can be provided to override whatever the current seed is. When you provide an overriding seed, the sequence will *not* increment its internal seed. (Will act like it was never called.)
+ - `options` in the form of hash args can be passed to the block.
+ - `block` can be provided to override the block used for the call. When you provide an overriding block, the sequence will still increment its internal seed.
+
+Sample:
+
+    Olfactory.sequence :ip_address, :seed => 1 do |n, options|
+      options[:ipv6] ? "fe80::2a18:78ff:feba:#{n}" : "192.168.1.#{n % 255}"
+    end
+    Olfactory.generate(:ip_address) # => "192.168.1.1"
+    Olfactory.generate(:ip_address, :seed => 255) # => "192.168.1.255"
+    Olfactory.generate(:ip_address) # => "192.168.1.2"
+    Olfactory.generate(:ip_address, :ipv6 => true) # => "fe80::2a18:78ff:feba:3"
+    Olfactory.generate(:ip_address) do |n|
+      "172.168.1.#{n % 255}"
+    end # => "172.168.1.4"
+    
+###### When defining at the template level
+
+`Olfactory` sequences don't provide much benefit over other gems at the global level, but they really shine when used within templates. Sequences work exactly the same within templates, except they can be bound by `scope`, allowing the author a great deal of control over when sequences 'reset.' 
+
+`scope` can either be `:instance`, which resets the seed for each instance of the template, or `:template`, which shares the seed across all instances of the template.
+
+Sample:
+
+    # Template definition
+    Olfactory.template :computer do |t|
+      t.has_one :serial_number
+      t.sequence :serial_number, :scope => :template do |n|
+        (10000 + n)
+      end
+      t.has_many :registers, :singular => :register
+      t.sequence :register, :scope => :instance do |n|
+        "Register #{n+1}"
+      end
+    end
+    
+    Olfactory.build :computer do |c|
+      c.serial_number { c.generate(:serial_number) }
+      c.registers 2 { c.generate(:register) }
+    end
+    # => { :serial_number => 10000, :registers => ["Register 1", "Register 2"] }
+    
+    Olfactory.build :computer do |c|
+      c.serial_number { c.generate(:serial_number) }
+      c.registers 2 { c.generate(:register) }
+    end
+    # => { :serial_number => 10001, :registers => ["Register 1", "Register 2"] }
+
 ##### #preset
 
 Defines a preset of values.
