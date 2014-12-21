@@ -191,8 +191,10 @@ module Olfactory
       end
       return_value
     end
-    def transient(name, value)
-      self.transients[name] = value if !(self.default_mode && self.transients.has_key?(name))
+    def transient(name, value = nil, &block)
+      if !(self.default_mode && self.transients.has_key?(name))
+        self.transients[name] = (block ? block.call : value)
+      end
     end
     def generate(name, options = {}, &block)
       sequence = self.definition.t_sequences[name]

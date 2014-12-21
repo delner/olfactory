@@ -1185,13 +1185,27 @@ describe Olfactory::Template do
     end
     let(:value) { "temporary value"}
     context "when set" do
-      subject do
-        Olfactory.build :widget do |t|
-          t.transient :foo, value
+      context "given a basic value" do
+        subject do
+          Olfactory.build :widget do |t|
+            t.transient :foo, value
+          end
+        end
+        it do
+          expect(subject.transients[:foo]).to eq(value)
         end
       end
-      it do
-        expect(subject.transients[:foo]).to eq(value)
+      context "given a block" do
+        subject do
+          Olfactory.build :widget do |t|
+            t.transient :foo do
+              value
+            end
+          end
+        end
+        it do
+          expect(subject.transients[:foo]).to eq(value)
+        end
       end
     end
     context "when read" do
