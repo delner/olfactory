@@ -1242,6 +1242,7 @@ describe Olfactory::Template do
   context "defaults" do
     let(:value) { "doodad" }
     let(:default_value) { "default doodad" }
+    let(:default_after_value) { "default after doodad" }
     context "before" do
       before(:context) do
         Olfactory.template :widget do |t|
@@ -1266,26 +1267,157 @@ describe Olfactory::Template do
       end
     end
     context "after" do
-      before(:context) do
-        Olfactory.template :widget do |t|
-          t.has_one :doodad
-          t.has_one :other_doodad
-          t.after do |d|
-            d.doodad default_value
-            d.other_doodad default_value
+      context "values" do
+        context "given a has_one" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.has_one :doodad
+              t.has_one :other_doodad
+              t.after do |d|
+                d.doodad default_value
+                d.other_doodad default_value
+              end
+            end
+          end
+          subject do
+            Olfactory.build :widget do |t|
+              t.doodad value
+            end
+          end
+          it "will not override existing ones" do
+            expect(subject[:doodad]).to eq(value)
+          end
+          it "will fill in missing ones"do
+            expect(subject[:other_doodad]).to eq(default_value)
+          end
+        end
+        context "given a has_many" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.has_many :doodads, :singular => :doodad
+              t.has_many :other_doodads, :singular => :other_doodad
+              t.after do |d|
+                d.doodad default_value
+                d.doodads default_value
+                d.other_doodad default_value
+                d.other_doodads default_value, default_value
+              end
+            end
+          end
+          subject do
+            Olfactory.build :widget do |t|
+              t.doodad value
+            end
+          end
+          it "will not override existing ones" do
+            expect(subject[:doodads]).to eq([value])
+          end
+          it "will fill in missing ones"do
+            expect(subject[:other_doodads]).to eq([default_value, default_value, default_value])
+          end
+        end
+        context "given a embeds_one" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.embeds_one :doodad
+              t.embeds_one :other_doodad
+              t.after do |d|
+                d.doodad { |doodad| doodad.gizmo default_value }
+                d.other_doodad { |doodad| doodad.gizmo default_value }
+              end
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+            end
+            Olfactory.template :other_doodad do |t|
+              t.has_one :gizmo
+            end
+          end
+          subject do
+            Olfactory.build :widget do |t|
+              t.doodad { |doodad| doodad.gizmo value }
+            end
+          end
+          it "will not override existing ones" do
+            expect(subject[:doodad]).to eq({ :gizmo => value })
+          end
+          it "will fill in missing ones" do
+            expect(subject[:other_doodad]).to eq({ :gizmo => default_value })
+          end
+        end
+        context "given a embeds_many" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.embeds_many :doodads, :singular => :doodad
+              t.embeds_many :other_doodads, :singular => :other_doodad
+              t.after do |d|
+                d.doodad { |doodad| doodad.gizmo default_value }
+                d.doodads 2 do |doodad| doodad.gizmo default_value end
+                d.other_doodad { |doodad| doodad.gizmo default_value }
+                d.other_doodads 2 do |doodad| doodad.gizmo default_value end
+              end
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+            end
+            Olfactory.template :other_doodad do |t|
+              t.has_one :gizmo
+            end
+          end
+          subject do
+            Olfactory.build :widget do |t|
+              t.doodad { |doodad| doodad.gizmo value }
+            end
+          end
+          it "will not override existing ones" do
+            expect(subject[:doodads]).to eq([{ :gizmo => value }])
+          end
+          it "will fill in missing ones"do
+            expect(subject[:other_doodads]).to eq([{ :gizmo => default_value }, { :gizmo => default_value }, { :gizmo => default_value }])
           end
         end
       end
-      subject do
-        Olfactory.build :widget do |t|
-          t.doodad value
+    end
+    context "both before and after" do
+      context "given no value" do
+        before(:context) do
+          Olfactory.template :widget do |t|
+            t.has_one :doodad
+            t.before do |d|
+              d.doodad default_value
+            end
+            t.after do |d|
+              d.doodad default_after_value
+            end
+          end
+        end
+        subject do
+          Olfactory.build :widget
+        end
+        it "will override with a default the second time" do
+          expect(subject[:doodad]).to eq(default_after_value)
         end
       end
-      it "values will not override existing ones" do
-        expect(subject[:doodad]).to eq(value)
-      end
-      it "values will fill in missing ones"do
-        expect(subject[:other_doodad]).to eq(default_value)
+      context "given a value" do
+        before(:context) do
+          Olfactory.template :widget do |t|
+            t.has_one :doodad
+            t.before do |d|
+              d.doodad default_value
+            end
+            t.after do |d|
+              d.doodad default_value
+            end
+          end
+        end
+        subject do
+          Olfactory.build :widget do |t|
+            t.doodad value
+          end
+        end
+        it "will not set override with a default the second time" do
+          expect(subject[:doodad]).to eq(value)
+        end
       end
     end
   end

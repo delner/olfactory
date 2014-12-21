@@ -1,13 +1,14 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class Template < Hash
-    attr_accessor :definition, :transients, :sequences, :dictionaries, :default_mode
+    attr_accessor :definition, :transients, :sequences, :dictionaries, :default_mode, :default_populated
 
     def initialize(definition, options = {})
       self.definition = definition
       self.transients = options[:transients] ? options[:transients].clone : {}
       self.sequences = options[:sequences] ? options[:sequences].clone : {}
       self.dictionaries = options[:dictionaries] ? options[:dictionaries].clone : {}
+      self.default_populated = {}
     end
 
     def build(block, options = {})
@@ -50,7 +51,7 @@ module Olfactory
       end
     end
     def can_set_field?(name)
-      !(self.default_mode && self.has_key?(name))
+      !(self.default_mode && self.has_key?(name)) || (self.default_mode && (self.default_populated[name] == true))
     end
     def extract_variable_name(args)
       variable_name = args.first
@@ -187,6 +188,11 @@ module Olfactory
           end
         else
           return_value = self[field_definition[:name]] = field_value
+        end
+        if self.default_mode && (self.default_populated[field_definition[:name]] != false)
+          self.default_populated[field_definition[:name]] = true
+        else
+          self.default_populated[field_definition[:name]] = false
         end
       end
       return_value
