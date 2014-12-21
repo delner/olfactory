@@ -187,14 +187,14 @@ module Olfactory
       self.transients[name] = value if !(self.default_mode && self.transients.has_key?(name))
     end
     def generate(name, options = {}, &block)
-      sequence_defintion = self.definition.t_sequences[name]
+      sequence = self.definition.t_sequences[name]
       # Template scope
-      if sequence_defintion && sequence_defintion[:scope] == :template
-        value = self.definition.generate(name, options, block)
+      if sequence && sequence[:scope] == :template
+        value = sequence.generate(name, options, block)
       # Instance scope
-      elsif sequence_defintion && sequence_defintion[:scope] == :instance
-        self.sequences[name] ||= { :current_seed => (options[:seed] || sequence_defintion[:seed]) }
-        value = self.definition.generate(name, options.merge(:seed =>  self.sequences[name][:current_seed]), block)
+      elsif sequence && sequence[:scope] == :instance
+        self.sequences[name] ||= { :current_seed => (options[:seed] || sequence[:seed]) }
+        value = sequence.generate(name, options.merge(:seed =>  self.sequences[name][:current_seed]), block)
         self.sequences[name][:current_seed] += 1 if !options.has_key?(:seed)
       else
         raise "Unknown sequence '#{name}'!"

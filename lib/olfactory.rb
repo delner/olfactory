@@ -1,4 +1,5 @@
 # -*- encoding : utf-8 -*-
+require 'olfactory/sequence'
 require 'olfactory/template_definition'
 require 'olfactory/template'
 
@@ -25,10 +26,7 @@ module Olfactory
     self.templates[name] = new_template_definition
   end
   def self.sequence(name, options = {}, &block)
-    sequences[name] = { :type => :sequence,
-                        :name => name,
-                        :current_seed => (options[:seed] || 0),
-                        :evaluator => block }.merge(options)
+    sequences[name] = Sequence.new(name, options, block)
   end
 
   # Invocations
@@ -42,12 +40,10 @@ module Olfactory
   end
   def self.generate(name, options = {}, &block)
     if sequence = self.sequences[name]
-      seed = options.delete(:seed) || sequence[:current_seed]
-      target = block || sequence[:evaluator]
-      value = target.call(seed, options)
-      sequence[:current_seed] += 1
+      sequence.generate(name, options, block)
+    else
+      raise "Unknown sequence '#{name}'!"
     end
-    value
   end
 
   def self.reload

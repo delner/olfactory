@@ -51,16 +51,6 @@ module Olfactory
         raise "Can't build 0 or less items!"
       end
     end
-    def generate(name, options = {}, block)
-
-      if sequence = self.t_sequences[name]
-        seed = options[:seed] || sequence[:current_seed]
-        target = block || sequence[:evaluator]
-        value = target.call(seed, options.reject { |k,v| k == :seed })
-        sequence[:current_seed] += 1 if !options.has_key?(:seed)
-      end
-      value
-    end
 
     def find_field_definition(name)
       definition = find_macro_definition(name)
@@ -127,13 +117,7 @@ module Olfactory
 
     # Defines a sequence
     def sequence(name, options = {}, &block)
-      self.t_sequences[name] =  { :type => :sequence,
-                                  :name => name,
-                                  :evaluator => block,
-                                  :scope => :instance,
-                                  :seed => (options[:seed] || 0),
-                                  :current_seed => (options[:seed] || 0)
-                                }.merge(options)
+      self.t_sequences[name] =  Sequence.new(name, { :scope => :instance }.merge(options), block)
     end
 
     # Defines a macro

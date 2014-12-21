@@ -737,262 +737,174 @@ describe Olfactory::Template do
     end
   end
   context "sequence" do
-    context "with a global scope" do
-      context "and no seed" do
-        before(:example) do
-          Olfactory.sequence :address do |n, options|
-            "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-          end
-        end
-        context "given nothing" do
-          subject do
-            Olfactory.generate(:address)
-          end
-          it { expect(subject).to eq("2 BROADWAY") }
-        end
-        context "given options" do
-          subject do
-            Olfactory.generate(:address, :prefix => "WEST")
-          end
-          it { expect(subject).to eq("2 WEST BROADWAY") }
-        end
-        context "given a block" do
-          subject do
-            Olfactory.generate(:address) do |n|
-              "#{(n + (n % 2)) + 2} JOHN STREET"
-            end
-          end
-          it { expect(subject).to eq("2 JOHN STREET") }
-        end
-        context "given options and a block" do
-          subject do
-            Olfactory.generate(:address, :suffix => "ROAD") do |n, options|
-              "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
-            end
-          end
-          it { expect(subject).to eq("2 JOHN ROAD") }
-        end
-      end
-      context "and a seed" do
-        before(:example) do
-          Olfactory.sequence :address, :seed => 10 do |n, options|
-            "#{(n + (n % 2))} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-          end
-        end
-        context "given nothing" do
-          subject do
-            Olfactory.generate(:address)
-          end
-          it { expect(subject).to eq("10 BROADWAY") }
-        end
-        context "given options" do
-          subject do
-            Olfactory.generate(:address, :prefix => "WEST")
-          end
-          it { expect(subject).to eq("10 WEST BROADWAY") }
-        end
-        context "given a block" do
-          subject do
-            Olfactory.generate(:address) do |n|
-              "#{(n + (n % 2))} JOHN STREET"
-            end
-          end
-          it { expect(subject).to eq("10 JOHN STREET") }
-        end
-        context "given options and a block" do
-          subject do
-            Olfactory.generate(:address, :suffix => "ROAD") do |n, options|
-              "#{(n + (n % 2))} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
-            end
-          end
-          it { expect(subject).to eq("10 JOHN ROAD") }
-        end
-      end
-      context "given sequential invocations" do
-        before(:context) do
-          Olfactory.sequence :address do |n, options|
-            "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-          end
-        end
-        it { expect(Olfactory.generate(:address)).to eq("2 BROADWAY") }
-        it { expect(Olfactory.generate(:address)).to eq("4 BROADWAY") }
-      end
-    end
-    context "within a factory" do
-      context "with a scope" do
-        context "bound to the template" do
-          context do
-            before(:example) do
-              Olfactory.template :building do |t|
-                t.has_one :address
-                t.sequence :address, :scope => :template do |n, options|
-                  "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-                end
+    context "with a scope" do
+      context "bound to the template" do
+        context do
+          before(:example) do
+            Olfactory.template :building do |t|
+              t.has_one :address
+              t.sequence :address, :scope => :template do |n, options|
+                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
               end
             end
-            context "given nothing" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address building.generate(:address)
-                end
-              end
-              it { expect(subject[:address]).to eq("2 BROADWAY") }
-            end
-            context "given options" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address building.generate(:address, :prefix => "WEST")
-                end
-              end
-              it { expect(subject[:address]).to eq("2 WEST BROADWAY") }
-            end
-            context "given a block" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address do
-                    building.generate(:address) do |n|
-                      "#{(n + (n % 2)) + 2} JOHN STREET"
-                    end
-                  end
-                end
-              end
-              it { expect(subject[:address]).to eq("2 JOHN STREET") }
-            end
-            context "given options and a block" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address do
-                    building.generate(:address, :suffix => "ROAD") do |n, options|
-                      "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
-                    end
-                  end
-                end
-              end
-              it { expect(subject[:address]).to eq("2 JOHN ROAD") }
-            end
           end
-          context "given sequential invocations" do
-            before(:context) do
-              Olfactory.template :building do |t|
-                t.has_one :address
-                t.sequence :address, :scope => :template do |n, options|
-                  "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-                end
-              end
-            end
-            let(:building_one) do
-              Olfactory.build_template :building do |building|
-                building.address { building.generate(:address) }
-              end
-            end
-            it { expect(building_one[:address]).to eq("2 BROADWAY") }
-            let(:building_two) do
-              Olfactory.build_template :building do |building|
-                building.address { building.generate(:address) }
-              end
-            end
-            it { expect(building_two[:address]).to eq("4 BROADWAY") }
-          end
-        end
-        context "bound to the instance" do
-          context do
-            before(:example) do
-              Olfactory.template :building do |t|
-                t.has_one :address
-                t.sequence :address, :scope => :instance do |n, options|
-                  "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-                end
-              end
-            end
-            context "given nothing" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address building.generate(:address)
-                end
-              end
-              it { expect(subject[:address]).to eq("2 BROADWAY") }
-            end
-            context "given options" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address building.generate(:address, :prefix => "WEST")
-                end
-              end
-              it { expect(subject[:address]).to eq("2 WEST BROADWAY") }
-            end
-            context "given a block" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address do
-                    building.generate(:address) do |n|
-                      "#{(n + (n % 2)) + 2} JOHN STREET"
-                    end
-                  end
-                end
-              end
-              it { expect(subject[:address]).to eq("2 JOHN STREET") }
-            end
-            context "given options and a block" do
-              subject do
-                Olfactory.build_template :building do |building|
-                  building.address do
-                    building.generate(:address, :suffix => "ROAD") do |n, options|
-                      "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
-                    end
-                  end
-                end
-              end
-              it { expect(subject[:address]).to eq("2 JOHN ROAD") }
-            end
-          end
-          context "given sequential invocations" do
-            before(:context) do
-              Olfactory.template :building do |t|
-                t.has_one :address
-                t.has_one :other_address
-                t.sequence :address, :scope => :instance do |n, options|
-                  "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
-                end
-              end
-            end
-            let(:building_one) do
+          context "given nothing" do
+            subject do
               Olfactory.build_template :building do |building|
                 building.address building.generate(:address)
-                building.other_address building.generate(:address)
               end
             end
-            it { expect(building_one[:address]).to eq("2 BROADWAY") }
-            it { expect(building_one[:other_address]).to eq("4 BROADWAY") }
-            let(:building_two) do
+            it { expect(subject[:address]).to eq("2 BROADWAY") }
+          end
+          context "given options" do
+            subject do
+              Olfactory.build_template :building do |building|
+                building.address building.generate(:address, :prefix => "WEST")
+              end
+            end
+            it { expect(subject[:address]).to eq("2 WEST BROADWAY") }
+          end
+          context "given a block" do
+            subject do
+              Olfactory.build_template :building do |building|
+                building.address do
+                  building.generate(:address) do |n|
+                    "#{(n + (n % 2)) + 2} JOHN STREET"
+                  end
+                end
+              end
+            end
+            it { expect(subject[:address]).to eq("2 JOHN STREET") }
+          end
+          context "given options and a block" do
+            subject do
+              Olfactory.build_template :building do |building|
+                building.address do
+                  building.generate(:address, :suffix => "ROAD") do |n, options|
+                    "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
+                  end
+                end
+              end
+            end
+            it { expect(subject[:address]).to eq("2 JOHN ROAD") }
+          end
+        end
+        context "given sequential invocations" do
+          before(:context) do
+            Olfactory.template :building do |t|
+              t.has_one :address
+              t.sequence :address, :scope => :template do |n, options|
+                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+              end
+            end
+          end
+          let(:building_one) do
+            Olfactory.build_template :building do |building|
+              building.address { building.generate(:address) }
+            end
+          end
+          it { expect(building_one[:address]).to eq("2 BROADWAY") }
+          let(:building_two) do
+            Olfactory.build_template :building do |building|
+              building.address { building.generate(:address) }
+            end
+          end
+          it { expect(building_two[:address]).to eq("4 BROADWAY") }
+        end
+      end
+      context "bound to the instance" do
+        context do
+          before(:example) do
+            Olfactory.template :building do |t|
+              t.has_one :address
+              t.sequence :address, :scope => :instance do |n, options|
+                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+              end
+            end
+          end
+          context "given nothing" do
+            subject do
               Olfactory.build_template :building do |building|
                 building.address building.generate(:address)
-                building.other_address building.generate(:address)
               end
             end
-            it { expect(building_two[:address]).to eq("2 BROADWAY") }
-            it { expect(building_two[:other_address]).to eq("4 BROADWAY") }
+            it { expect(subject[:address]).to eq("2 BROADWAY") }
           end
+          context "given options" do
+            subject do
+              Olfactory.build_template :building do |building|
+                building.address building.generate(:address, :prefix => "WEST")
+              end
+            end
+            it { expect(subject[:address]).to eq("2 WEST BROADWAY") }
+          end
+          context "given a block" do
+            subject do
+              Olfactory.build_template :building do |building|
+                building.address do
+                  building.generate(:address) do |n|
+                    "#{(n + (n % 2)) + 2} JOHN STREET"
+                  end
+                end
+              end
+            end
+            it { expect(subject[:address]).to eq("2 JOHN STREET") }
+          end
+          context "given options and a block" do
+            subject do
+              Olfactory.build_template :building do |building|
+                building.address do
+                  building.generate(:address, :suffix => "ROAD") do |n, options|
+                    "#{(n + (n % 2)) + 2} JOHN#{options[:suffix] ? " #{options[:suffix]}" : " STREET"}"
+                  end
+                end
+              end
+            end
+            it { expect(subject[:address]).to eq("2 JOHN ROAD") }
+          end
+        end
+        context "given sequential invocations" do
+          before(:context) do
+            Olfactory.template :building do |t|
+              t.has_one :address
+              t.has_one :other_address
+              t.sequence :address, :scope => :instance do |n, options|
+                "#{(n + (n % 2)) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+              end
+            end
+          end
+          let(:building_one) do
+            Olfactory.build_template :building do |building|
+              building.address building.generate(:address)
+              building.other_address building.generate(:address)
+            end
+          end
+          it { expect(building_one[:address]).to eq("2 BROADWAY") }
+          it { expect(building_one[:other_address]).to eq("4 BROADWAY") }
+          let(:building_two) do
+            Olfactory.build_template :building do |building|
+              building.address building.generate(:address)
+              building.other_address building.generate(:address)
+            end
+          end
+          it { expect(building_two[:address]).to eq("2 BROADWAY") }
+          it { expect(building_two[:other_address]).to eq("4 BROADWAY") }
         end
       end
     end
   end
   context "dictionary" do
-    context "with a global scope" do
-      # TODO
-    end
-    context "within a factory" do
-      context "with a scope" do
-        context "bound to the template" do
-          # TODO
-        end
-        context "bound to the instance" do
-          # TODO
-        end
+    context "with a scope" do
+      context "bound to the template" do
+        # TODO
+      end
+      context "bound to the instance" do
+        # TODO
       end
     end
   end
   context "macros" do
-    before do
+    before(:context) do
       Olfactory.template :widget do |t|
         t.has_one :doodad
         t.macro :make_shiny do |m, v|
@@ -1013,7 +925,7 @@ describe Olfactory::Template do
     end
 
     context "with parameters" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.has_one :doodad
           t.macro :make do |m, adj, adj2|
@@ -1033,7 +945,7 @@ describe Olfactory::Template do
     end
   end
   context "transients" do
-    before do
+    before(:context) do
       Olfactory.template :widget do |t|
         t.has_one :doodad
       end
@@ -1061,7 +973,7 @@ describe Olfactory::Template do
       end
     end
     context "when inherited" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.embeds_one :doodad
         end
@@ -1084,7 +996,7 @@ describe Olfactory::Template do
     let(:value) { "doodad" }
     let(:default_value) { "default doodad" }
     context "before" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.has_one :doodad
           t.has_one :other_doodad
@@ -1107,7 +1019,7 @@ describe Olfactory::Template do
       end
     end
     context "after" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.has_one :doodad
           t.has_one :other_doodad
@@ -1133,7 +1045,7 @@ describe Olfactory::Template do
   context "when created" do
     let(:value) { "saveable string" }
     context "containing a saveable object" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.has_one :doodad
         end
@@ -1149,7 +1061,7 @@ describe Olfactory::Template do
       end
     end
     context "containing a generic collection of saveable objects" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.has_many :doodads
         end
@@ -1163,7 +1075,7 @@ describe Olfactory::Template do
       it { expect(subject[:doodads].last.saved?).to be true }
     end
     context "containing a named collection of saveable objects" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.has_many :doodads, :named => true
         end
@@ -1177,13 +1089,13 @@ describe Olfactory::Template do
       it { expect(subject[:doodads][:b].saved?).to be true }
     end
     context "with an embedded template" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.embeds_one :doodad
         end
       end
       context "containing a saveable object" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_one :gizmo
           end
@@ -1196,7 +1108,7 @@ describe Olfactory::Template do
         it { expect(subject[:doodad][:gizmo].saved?).to be true }
       end
       context "containing a generic collection of saveable objects" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_many :gizmos
           end
@@ -1210,7 +1122,7 @@ describe Olfactory::Template do
         it { expect(subject[:doodad][:gizmos].last.saved?).to be true }
       end
       context "containing a named collection of saveable objects" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_many :gizmos, :named => true
           end
@@ -1225,13 +1137,13 @@ describe Olfactory::Template do
       end
     end
     context "with a generic collection of embedded templates" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.embeds_many :doodads, :singular => :doodad
         end
       end
       context "containing a saveable object" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_one :gizmo
           end
@@ -1244,7 +1156,7 @@ describe Olfactory::Template do
         it { expect(subject[:doodads].first[:gizmo].saved?).to be true }
       end
       context "containing a generic collection of saveable objects" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_many :gizmos
           end
@@ -1258,7 +1170,7 @@ describe Olfactory::Template do
         it { expect(subject[:doodads].first[:gizmos].last.saved?).to be true }
       end
       context "containing a named collection of saveable objects" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_many :gizmos, :named => true
           end
@@ -1273,13 +1185,13 @@ describe Olfactory::Template do
       end
     end
     context "with a named collection of embedded templates" do
-      before do
+      before(:context) do
         Olfactory.template :widget do |t|
           t.embeds_many :doodads, :singular => :doodad, :named => true
         end
       end
       context "containing a saveable object" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_one :gizmo
           end
@@ -1294,7 +1206,7 @@ describe Olfactory::Template do
         it { expect(subject[:doodads][:one][:gizmo].saved?).to be true }
       end
       context "containing a generic collection of saveable objects" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_many :gizmos
           end
@@ -1310,7 +1222,7 @@ describe Olfactory::Template do
         it { expect(subject[:doodads][:one][:gizmos].last.saved?).to be true }
       end
       context "containing a named collection of saveable objects" do
-        before do
+        before(:context) do
           Olfactory.template :doodad do |t|
             t.has_many :gizmos, :named => true
           end
