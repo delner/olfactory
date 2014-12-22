@@ -1,7 +1,14 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class Template < Hash
-    attr_accessor :definition, :transients, :sequences, :dictionaries, :default_mode, :default_populated
+    attr_accessor :definition,
+                  :transients,
+                  :sequences,
+                  :dictionaries,
+                  :default_mode,
+                  :default_populated,
+                  :default_populated_transients,
+                  :block_invocations
 
     def initialize(definition, options = {})
       self.definition = definition
@@ -9,6 +16,8 @@ module Olfactory
       self.sequences = options[:sequences] ? options[:sequences].clone : {}
       self.dictionaries = options[:dictionaries] ? options[:dictionaries].clone : {}
       self.default_populated = {}
+      self.default_populated_transients = {}
+      self.block_invocations = []
     end
 
     def build(block, options = {})
@@ -21,7 +30,6 @@ module Olfactory
         end
       end
       self.add_defaults(:after) if options[:defaults].nil? || options[:defaults]
-
       self
     end
 
@@ -67,6 +75,13 @@ module Olfactory
         subtemplate_definition = Olfactory.templates[subtemplate_name]
         subtemplate_definition ||= Olfactory.templates[field_definition[:singular]]
         if subtemplate_definition
+          # Invoke before clauses
+          self.add_defaults(:before_embedded)
+          # self.default_mode = true
+          # before_block = field_definition[:evaluator]
+          # before_block.call(self) if before_block
+          # self.default_mode = false
+
           if field_definition[:collection] && field_definition[:collection] <= Array
             # Embeds many
             if meth == field_definition[:singular]
@@ -108,6 +123,9 @@ module Olfactory
             field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
             do_not_set_value if field_value.nil?
           end
+
+          # Invoke after clauses
+          self.add_defaults(:after_embedded)
         else
           raise "Could not find a template matching '#{subtemplate_name}'!"
         end
@@ -198,8 +216,13 @@ module Olfactory
       return_value
     end
     def transient(name, value = nil, &block)
-      if !(self.default_mode && self.transients.has_key?(name))
+      if !(self.default_mode && self.transients.has_key?(name)) || (self.default_mode && (self.default_populated_transients[name] == true))
         self.transients[name] = (block ? block.call : value)
+        if self.default_mode && (self.default_populated_transients[name] != false)
+          self.default_populated_transients[name] = true
+        else
+          self.default_populated_transients[name] = false
+        end
       end
     end
     def generate(name, options = {}, &block)
@@ -223,16 +246,25 @@ module Olfactory
 
       case mode
       when :before
-        default_definition = definition.t_before
+        default_definitions = definition.t_befores[:all]
       when :after
-        default_definition = definition.t_after
+        default_definitions = definition.t_afters[:all]
+      when :before_embedded
+        default_definitions = definition.t_befores[:embedded]
+      when :after_embedded
+        default_definitions = definition.t_afters[:embedded]
       end
-          
-      if default_definition[:evaluator]
-        default_definition[:evaluator].call(self)
-      elsif default_definition[:preset]
-        preset_definition = definition.find_preset_definition(default_definition[:preset])
-        preset_definition[:evaluator].call(self)
+      default_definitions ||= []
+      default_definitions.reject! { |dfn| dfn[:run] == :once && self.block_invocations.include?(dfn.object_id) }
+      
+      default_definitions.each do |default_definition|
+        if default_definition[:evaluator]
+          default_definition[:evaluator].call(self)
+        elsif default_definition[:preset]
+          preset_definition = definition.find_preset_definition(default_definition[:preset])
+          preset_definition[:evaluator].call(self)
+        end
+        self.block_invocations << default_definition.object_id if default_definition[:run] # Mark block as invoked
       end
 
       self.default_mode = false

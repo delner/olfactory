@@ -1,7 +1,7 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class TemplateDefinition
-    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_dictionaries, :t_macros, :t_presets, :t_before, :t_after
+    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_dictionaries, :t_macros, :t_presets, :t_befores, :t_afters
 
     def initialize
       self.t_items = {}
@@ -10,8 +10,8 @@ module Olfactory
       self.t_dictionaries = {}
       self.t_macros = {}
       self.t_presets = {}
-      self.t_before = {}
-      self.t_after = {}
+      self.t_befores = {}
+      self.t_afters = {}
     end
 
     def build(block, options = {})
@@ -158,16 +158,33 @@ module Olfactory
     end
 
     # Defines defaults
-    def before(options = {}, &block)
-      self.t_before = { :type => :default,
-                        :evaluator => block
-                      }.merge(options)
-      self.t_before = self.t_before.merge(:preset => options[:preset]) if options[:preset]
+    def before(context = nil, options = {}, &block)
+      if context.class == Hash
+        # Arguments need to be remapped...
+        options = context
+        context = nil
+      end
+      before_definition = { :type => :default,
+                            :evaluator => block
+                          }.merge(options)
+      before_definition.merge!(:preset => options[:preset]) if options[:preset]
+      context ||= :all
+      self.t_befores[context] ||= []
+      self.t_befores[context] << before_definition
     end
-    def after(options = {}, &block)
-      self.t_after = {  :type => :default,
-                        :evaluator => block }.merge(options)
-      self.t_after = self.t_after.merge(:preset => options[:preset]) if options[:preset]
+    def after(context = nil, options = {}, &block)
+      if context.class == Hash
+        # Arguments need to be remapped...
+        options = context
+        context = nil
+      end
+      after_definition = { :type => :default,
+                            :evaluator => block
+                          }.merge(options)
+      after_definition.merge!(:preset => options[:preset]) if options[:preset]
+      context ||= :all
+      self.t_afters[context] ||= []
+      self.t_afters[context] << after_definition
     end
   end
 end

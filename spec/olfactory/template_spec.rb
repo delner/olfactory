@@ -395,6 +395,37 @@ describe Olfactory::Template do
         end
       end
     end
+    # context "with a before block" do
+    #   before do
+    #     Olfactory.template :widget do |t|
+    #       t.embeds_one :doodad do |w|
+    #         w.quality :dull
+    #       end
+    #       t.macro :quality do |m, type|
+    #         m.transient :attribute, type.to_s
+    #       end
+    #     end
+    #     Olfactory.template :doodad do |t|
+    #       t.has_one :gizmo
+    #       t.after do |d|
+    #         d.gizmo "#{d.transients[:attribute]} #{value}"
+    #       end
+    #     end
+    #   end
+    #   let(:shiny) do
+    #     Olfactory.build :widget do |w|
+    #       w.quality :shiny
+    #       w.doodad
+    #     end
+    #   end
+    #   let(:dull) do
+    #     Olfactory.build :widget do |w|
+    #       w.doodad
+    #     end
+    #   end
+    #   it { expect(shiny[:doodad][:gizmo]).to eq("shiny #{value}")}
+    #   it { expect(dull[:doodad][:gizmo]).to eq("dull #{value}")}
+    # end
   end
   context "embeds_many" do
     before(:context) do
@@ -1296,26 +1327,95 @@ describe Olfactory::Template do
     let(:default_value) { "default doodad" }
     let(:default_after_value) { "default after doodad" }
     context "before" do
-      before(:context) do
-        Olfactory.template :widget do |t|
-          t.has_one :doodad
-          t.has_one :other_doodad
-          t.before do |d|
-            d.doodad default_value
-            d.other_doodad default_value
+      context "all" do
+        before(:context) do
+          Olfactory.template :widget do |t|
+            t.has_one :doodad
+            t.has_one :other_doodad
+            t.before do |d|
+              d.doodad default_value
+              d.other_doodad default_value
+            end
           end
         end
-      end
-      subject do
-        Olfactory.build :widget do |t|
-          t.doodad value
+        subject do
+          Olfactory.build :widget do |t|
+            t.doodad value
+          end
+        end
+        it "values can be overriden" do
+          expect(subject[:doodad]).to eq(value)
+        end
+        it "values can be set"do
+          expect(subject[:other_doodad]).to eq(default_value)
         end
       end
-      it "values can be overriden" do
-        expect(subject[:doodad]).to eq(value)
-      end
-      it "values can be set"do
-        expect(subject[:other_doodad]).to eq(default_value)
+      context "embedded" do
+        before(:context) do
+          Olfactory.template :widget do |t|
+            t.embeds_one :doodad
+            t.macro :quality do |m, type|
+              m.transient :attribute, type.to_s
+            end
+            t.before(:embedded) do |d|
+              d.quality :dull
+            end
+            t.before do |d|
+              d.quality :scratched
+            end
+          end
+          Olfactory.template :doodad do |t|
+            t.has_one :gizmo
+            t.after do |d|
+              d.gizmo "#{d.transients[:attribute]} #{value}"
+            end
+          end
+        end
+        let(:shiny) do
+          Olfactory.build :widget do |w|
+            w.quality :shiny
+            w.doodad
+          end
+        end
+        let(:dull) do
+          Olfactory.build :widget do |w|
+            w.doodad
+          end
+        end
+        it { expect(shiny[:doodad][:gizmo]).to eq("shiny #{value}")}
+        it { expect(dull[:doodad][:gizmo]).to eq("dull #{value}")}
+        context "(run once)" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.embeds_many :doodads, :singular => :doodad
+              t.has_one :thingamabob
+              t.macro :quality do |m, type|
+                m.transient :attribute, type.to_s
+              end
+              t.before(:embedded, :run => :once) do |d|
+                d.quality :dull
+                d.thingamabob "thingamabob" if d[:doodads] && d[:doodads].count > 0
+              end
+            end
+            Olfactory.template :doodad do |t|
+              t.has_one :gizmo
+              t.after do |d|
+                d.gizmo "#{d.transients[:attribute]} #{value}"
+              end
+            end
+          end
+          subject do
+            Olfactory.build :widget do |w|
+              w.doodad
+              w.quality :shiny
+              w.doodad
+            end
+          end
+          it do
+            expect(subject[:doodads]).to eq([{ :gizmo => "dull #{value}" }, { :gizmo => "shiny #{value}" }])
+            expect(subject[:thingamabob]).to be_nil
+          end
+        end
       end
     end
     context "after" do
