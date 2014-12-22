@@ -44,7 +44,7 @@ module Olfactory
   end
   def self.generate(name, options = {}, &block)
     if sequence = self.sequences[name]
-      sequence.generate(name, options, block)
+      sequence.generate(options, block)
     else
       raise "Unknown sequence '#{name}'!"
     end

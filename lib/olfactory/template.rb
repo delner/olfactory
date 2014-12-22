@@ -206,12 +206,12 @@ module Olfactory
       sequence = self.definition.t_sequences[name]
       # Template scope
       if sequence && sequence[:scope] == :template
-        value = sequence.generate(name, options, block)
+        value = sequence.generate(options, block)
       # Instance scope
       elsif sequence && sequence[:scope] == :instance
-        self.sequences[name] ||= { :current_seed => (options[:seed] || sequence[:seed]) }
-        value = sequence.generate(name, options.merge(:seed =>  self.sequences[name][:current_seed]), block)
-        self.sequences[name][:current_seed] += 1 if !options.has_key?(:seed)
+        self.sequences[name] ||= sequence.dup.reset
+        value = self.sequences[name].generate(options, block)
+        # self.sequences[name][:current_seed] += 1 if !options.has_key?(:seed)
       else
         raise "Unknown sequence '#{name}'!"
       end

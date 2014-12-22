@@ -71,6 +71,18 @@ describe Olfactory::Sequence do
       it { expect(subject).to eq("20 JOHN ROAD") }
     end
   end
+  context "given a dimension" do
+    before(:context) do
+      Olfactory.sequence :address do |n|
+        "#{(2*n)+2} BROADWAY"
+      end
+    end
+    let(:address_one) { Olfactory.generate(:address) }
+    let(:address_two) { Olfactory.generate(:address, :dimension => "LAS VEGAS") }
+    it { expect(address_one).to eq("2 BROADWAY") }
+    it { expect(address_two).to eq("2 BROADWAY") }
+    it { expect(address_one).to eq("4 BROADWAY") }
+  end
   context "given sequential invocations" do
     before(:context) do
       Olfactory.sequence :address do |n, options|

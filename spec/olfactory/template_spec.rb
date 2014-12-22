@@ -788,6 +788,26 @@ describe Olfactory::Template do
             end
             it { expect(subject[:address]).to eq("2 JOHN ROAD") }
           end
+          context "given a dimension" do
+            let!(:building_one) do
+              Olfactory.build :building do |building|
+                building.address building.generate(:address)
+              end
+            end
+            let!(:building_two) do
+              Olfactory.build :building do |building|
+                building.address building.generate(:address, :dimension => "LAS VEGAS")
+              end
+            end
+            let!(:building_three) do
+              Olfactory.build :building do |building|
+                building.address building.generate(:address)
+              end
+            end
+            it { expect(building_one[:address]).to eq("2 BROADWAY") }
+            it { expect(building_two[:address]).to eq("2 BROADWAY") }
+            it { expect(building_three[:address]).to eq("4 BROADWAY") }
+          end
         end
         context "given sequential invocations" do
           before(:context) do
@@ -861,6 +881,38 @@ describe Olfactory::Template do
               end
             end
             it { expect(subject[:address]).to eq("2 JOHN ROAD") }
+          end
+          context "given a dimension" do
+            before(:example) do
+              Olfactory.template :building do |t|
+                t.has_one :address
+                t.has_one :other_address
+                t.has_one :another_address
+                t.sequence :address, :scope => :instance do |n, options|
+                  "#{(2*n) + 2} #{"#{options[:prefix]} " if options[:prefix]}BROADWAY"
+                end
+              end
+            end
+            let!(:building_one) do
+              Olfactory.build :building do |building|
+                building.address building.generate(:address)
+                building.other_address building.generate(:address, :dimension => "LAS VEGAS")
+                building.another_address building.generate(:address)
+              end
+            end
+            let!(:building_two) do
+              Olfactory.build :building do |building|
+                building.address building.generate(:address)
+                building.other_address building.generate(:address, :dimension => "LAS VEGAS")
+                building.another_address building.generate(:address)
+              end
+            end
+            it { expect(building_one[:address]).to eq("2 BROADWAY") }
+            it { expect(building_one[:other_address]).to eq("2 BROADWAY") }
+            it { expect(building_one[:another_address]).to eq("4 BROADWAY") }
+            it { expect(building_two[:address]).to eq("2 BROADWAY") }
+            it { expect(building_two[:other_address]).to eq("2 BROADWAY") }
+            it { expect(building_two[:another_address]).to eq("4 BROADWAY") }
           end
         end
         context "given sequential invocations" do
