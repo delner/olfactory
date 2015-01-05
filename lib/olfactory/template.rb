@@ -20,7 +20,7 @@ module Olfactory
       self.block_invocations = []
     end
 
-    def build(block, options = {})
+    def construct(block, options = {})
       self.add_defaults(:before) if options[:defaults].nil? || options[:defaults]
       if block # Block can be nil (when we want only defaults)
         if options[:value]
@@ -32,7 +32,6 @@ module Olfactory
       self.add_defaults(:after) if options[:defaults].nil? || options[:defaults]
       self
     end
-
     def save!
       # Items, then subtemplates
       [self.definition.t_items, self.definition.t_subtemplates].each do |field_group_definitions|
@@ -239,6 +238,22 @@ module Olfactory
         raise "Unknown sequence '#{name}'!"
       end
       value
+    end
+    def build(name, *args)
+      if instantiator_definition = self.definition.t_instantiators[name]
+        instantiator_definition[:evaluator].call(self, *args)
+      end
+    end
+    def create(name, *args)
+      obj = self.build(name, *args)
+      if obj.class <= Array
+        obj.each { |o| o.save! if o.respond_to?(:save!) }
+      elsif obj.class <= Hash
+        obj.values.each { |o| o.save! if o.respond_to?(:save!) }
+      elsif obj.respond_to?(:save!)
+        obj.save!
+      end
+      obj
     end
     def add_defaults(mode)
       # Prevents overwrites of custom values by defaults

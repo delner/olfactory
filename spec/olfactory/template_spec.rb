@@ -1573,6 +1573,77 @@ describe Olfactory::Template do
       end
     end
   end
+  context "instantiators" do
+    context "given a symbol and block" do
+      before(:context) do
+        Olfactory.template :widget do |t|
+          t.has_one :doodad
+          t.instantiate :doodad do |i|
+            SaveableString.new("#{i[:doodad]}-instance")
+          end
+        end
+      end
+      let(:value) { "doodad" }
+      let(:template) { Olfactory.build :widget do |w| w.doodad "doodad" end }
+
+      context "invoked with #build" do
+        subject do
+          template.build(:doodad)
+        end
+        it do
+          expect(subject).to eq("#{value}-instance")
+          expect(subject.saved?).to be false
+        end
+      end
+      context "invoked with #create" do
+        subject do
+          template.create(:doodad)
+        end
+        context "that returns a saveable object" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.has_one :doodad
+              t.instantiate :doodad do |i|
+                SaveableString.new("#{i[:doodad]}-instance")
+              end
+            end
+          end
+          it do
+            expect(subject).to eq("#{value}-instance")
+            expect(subject.saved?).to be true
+          end
+        end
+        context "that returns an array of saveable objects" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.has_one :doodad
+              t.instantiate :doodad do |i|
+                [SaveableString.new("#{i[:doodad]}-instance-1"), SaveableString.new("#{i[:doodad]}-instance-2")]
+              end
+            end
+          end
+          it do
+            expect(subject).to eq(["#{value}-instance-1", "#{value}-instance-2"])
+            expect(subject.all? { |d| d.saved? }).to be true
+          end
+        end
+        context "that returns a hash of saveable objects" do
+          before(:context) do
+            Olfactory.template :widget do |t|
+              t.has_one :doodad
+              t.instantiate :doodad do |i|
+                { 1 => SaveableString.new("#{i[:doodad]}-instance"), 2 => SaveableString.new("#{i[:doodad]}-instance") }
+              end
+            end
+          end
+          it do
+            expect(subject).to eq({ 1 => "#{value}-instance", 2 => "#{value}-instance" })
+            expect(subject.values.all? { |d| d.saved? }).to be true
+          end
+        end
+      end
+    end
+  end
   context "when created" do
     let(:value) { "saveable string" }
     context "containing a saveable object" do

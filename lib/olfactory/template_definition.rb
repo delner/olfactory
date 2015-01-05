@@ -1,7 +1,7 @@
 # -*- encoding : utf-8 -*-
 module Olfactory
   class TemplateDefinition
-    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_dictionaries, :t_macros, :t_presets, :t_befores, :t_afters
+    attr_accessor :t_items, :t_subtemplates, :t_sequences, :t_dictionaries, :t_macros, :t_presets, :t_befores, :t_afters, :t_instantiators
 
     def initialize
       self.t_items = {}
@@ -12,6 +12,7 @@ module Olfactory
       self.t_presets = {}
       self.t_befores = {}
       self.t_afters = {}
+      self.t_instantiators = {}
     end
 
     def build(block, options = {})
@@ -19,7 +20,7 @@ module Olfactory
         self.build_preset(options[:preset], (options[:quantity] || 1), options.reject { |k,v| [:preset, :quantity].include?(k) })
       else
         new_template = Template.new(self, options)
-        new_template.build(block, options)
+        new_template.construct(block, options)
       end
       new_template
     end
@@ -39,9 +40,9 @@ module Olfactory
           new_template = Template.new(self, options)
           preset_block = preset_definition[:evaluator]
           if preset_definition[:regexp]
-            new_template.build(preset_block, options.merge(:value => preset_name))
+            new_template.construct(preset_block, options.merge(:value => preset_name))
           else
-            new_template.build(preset_block, options)
+            new_template.construct(preset_block, options)
           end
         elsif preset_name.nil?
           self.build(nil, options)
@@ -155,6 +156,14 @@ module Olfactory
                                 :evaluator => block
                               }.merge(options)
       self.t_presets[name] = self.t_presets[name].merge(:regexp => name) if name.class <= Regexp
+    end
+
+    # Defines an instantiator
+    def instantiate(name, options = {}, &block)
+      self.t_instantiators[name] = {  :type => :instantiator,
+                                      :name => name,
+                                      :evaluator => block 
+                                    }.merge(options)
     end
 
     # Defines defaults
