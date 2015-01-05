@@ -67,7 +67,7 @@ module Olfactory
     end
     def populate_field(field_definition, meth, args, block)
       if field_definition[:type] == :macro
-        field_value = build_macro(field_definition, args, block)
+        field_value = construct_macro(field_definition, args, block)
         do_not_set_value = true
       elsif field_definition[:type] == :subtemplate && can_set_field?(field_definition[:name])
         subtemplate_name = field_definition.has_key?(:template) ? field_definition[:template] : field_definition[:name]
@@ -88,14 +88,14 @@ module Olfactory
               grammar = :singular
               preset_name = args.first
 
-              field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
+              field_value = construct_one_subtemplate(subtemplate_definition, preset_name, block)
             else
               # Plural
               grammar = :plural
               quantity = args.detect { |value| value.class <= Integer }
               preset_name = args.detect { |value| value != quantity }
 
-              field_value = build_many_subtemplates(subtemplate_definition, quantity, preset_name, block)
+              field_value = construct_many_subtemplates(subtemplate_definition, quantity, preset_name, block)
               do_not_set_value if field_value.nil?
             end
           elsif field_definition[:collection] && field_definition[:collection] <= Hash
@@ -107,7 +107,7 @@ module Olfactory
               args = args[1..(args.size-1)]
               preset_name = args.first
               
-              field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
+              field_value = construct_one_subtemplate(subtemplate_definition, preset_name, block)
               do_not_set_value if field_value.nil? # || field_value.empty?
             else
               # Plural
@@ -119,7 +119,7 @@ module Olfactory
             # Embeds one
             preset_name = args.first
 
-            field_value = build_one_subtemplate(subtemplate_definition, preset_name, block)
+            field_value = construct_one_subtemplate(subtemplate_definition, preset_name, block)
             do_not_set_value if field_value.nil?
           end
 
@@ -136,7 +136,7 @@ module Olfactory
             grammar = :singular
             obj = args.count == 1 ? args.first : args
             
-            field_value = build_one_item(field_definition, obj, block)
+            field_value = construct_one_item(field_definition, obj, block)
             do_not_set_value = true if field_value.nil?
           else
             # Plural
@@ -144,7 +144,7 @@ module Olfactory
             quantity = args.first if block && args.first.class <= Integer
             arr = args.first if args.count == 1 && args.first.class <= Array
 
-            field_value = build_many_items(field_definition, quantity, arr, args, block)
+            field_value = construct_many_items(field_definition, quantity, arr, args, block)
             do_not_set_value = true if field_value.empty?
           end
         elsif field_definition[:collection] && field_definition[:collection] <= Hash
@@ -156,7 +156,7 @@ module Olfactory
             args = args[1..(args.size-1)]
             obj = args.first
 
-            field_value = build_one_item(field_definition, obj, block)
+            field_value = construct_one_item(field_definition, obj, block)
             do_not_set_value = true if field_value.nil?
           else
             # Plural
@@ -173,7 +173,7 @@ module Olfactory
           # Has one
           obj = args.first
             
-          field_value = build_one_item(field_definition, obj, block)
+          field_value = construct_one_item(field_definition, obj, block)
         end
       elsif field_definition.class == Olfactory::Dictionary
         if field_definition.scope == :template
@@ -284,38 +284,38 @@ module Olfactory
 
       self.default_mode = false
     end
-    def build_macro(macro_definition, args, block)
+    def construct_macro(macro_definition, args, block)
       if macro_definition[:evaluator]
         macro_definition[:evaluator].call(self, *args)
       end
     end
-    def build_one_subtemplate(subtemplate_definition, preset_name, block)
+    def construct_one_subtemplate(subtemplate_definition, preset_name, block)
       # Block
       if block
-        subtemplate_definition.build(block, :transients => self.transients)
+        subtemplate_definition.construct(block, :transients => self.transients)
       # Preset Name
       elsif preset_name
-        subtemplate_definition.build_preset(preset_name, 1, :transients => self.transients)
+        subtemplate_definition.construct_preset(preset_name, 1, :transients => self.transients)
       # Default (nothing)
       else
-        subtemplate_definition.build(nil, :transients => self.transients)
+        subtemplate_definition.construct(nil, :transients => self.transients)
       end
     end
-    def build_many_subtemplates(subtemplate_definition, quantity, preset_name, block)
+    def construct_many_subtemplates(subtemplate_definition, quantity, preset_name, block)
       # Integer, Block
       if quantity && block
-        Array.new(quantity) { subtemplate_definition.build(block, :transients => self.transients) }
+        Array.new(quantity) { subtemplate_definition.construct(block, :transients => self.transients) }
       # Integer, Preset Name
       elsif quantity && preset_name
-        subtemplate_definition.build_preset(preset_name, quantity, :transients => self.transients)
+        subtemplate_definition.construct_preset(preset_name, quantity, :transients => self.transients)
       # Integer
       elsif quantity
-        Array.new(quantity) { subtemplate_definition.build(nil, :transients => self.transients) }
+        Array.new(quantity) { subtemplate_definition.construct(nil, :transients => self.transients) }
       else
         nil
       end
     end
-    def build_one_item(item_definition, obj, block)
+    def construct_one_item(item_definition, obj, block)
       if block
         block.call
       elsif obj
@@ -324,7 +324,7 @@ module Olfactory
         nil
       end
     end
-    def build_many_items(item_definition, quantity, arr, args, block)
+    def construct_many_items(item_definition, quantity, arr, args, block)
       # Integer, Block
       if quantity && block
         Array.new(quantity) { block.call }

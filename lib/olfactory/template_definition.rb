@@ -15,24 +15,24 @@ module Olfactory
       self.t_instantiators = {}
     end
 
-    def build(block, options = {})
+    def construct(block, options = {})
       if options[:preset] || options[:quantity]
-        self.build_preset(options[:preset], (options[:quantity] || 1), options.reject { |k,v| [:preset, :quantity].include?(k) })
+        self.construct_preset(options[:preset], (options[:quantity] || 1), options.reject { |k,v| [:preset, :quantity].include?(k) })
       else
         new_template = Template.new(self, options)
         new_template.construct(block, options)
       end
       new_template
     end
-    def build_preset(preset_name, quantity, options = {})
+    def construct_preset(preset_name, quantity, options = {})
       raise "Quantity must be an integer!" if !(quantity.class <= Integer)
 
       if quantity > 1
         # Build multiple
         if preset_name
-          Array.new(quantity) { self.build_preset(preset_name, 1, options) }
+          Array.new(quantity) { self.construct_preset(preset_name, 1, options) }
         else
-          Array.new(quantity) { self.build(nil, options) }
+          Array.new(quantity) { self.construct(nil, options) }
         end
       elsif quantity == 1
         if preset_definition = self.find_preset_definition(preset_name)
@@ -45,7 +45,7 @@ module Olfactory
             new_template.construct(preset_block, options)
           end
         elsif preset_name.nil?
-          self.build(nil, options)
+          self.construct(nil, options)
         else
           raise "Missing preset matching '#{preset_name}' for template!"
         end
