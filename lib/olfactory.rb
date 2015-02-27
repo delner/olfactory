@@ -67,8 +67,9 @@ module Olfactory
       self.sequences[name].reset
     end
   end
-  def self.reset_template_sequences(template, *names)
-    if template = self.templates[template]
+  def self.reset_template_sequences(template = nil, *names)
+    templates = template.nil? ? self.templates.values : [self.templates[template]].compact
+    templates.each do |template|
       template.reset_sequences(*names)
     end
   end
@@ -78,8 +79,9 @@ module Olfactory
       self.dictionaries[name].reset
     end
   end
-  def self.reset_template_dictionaries(template, *names)
-    if template = self.templates[template]
+  def self.reset_template_dictionaries(template = nil, *names)
+    templates = template.nil? ? self.templates.values : [self.templates[template]].compact
+    templates.each do |template|
       template.reset_dictionaries(*names)
     end
   end
