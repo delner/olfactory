@@ -8,7 +8,7 @@ Olfactory
 
 Olfactory is a factory extension for creating complex object sets, as a supplement to `factory_girl`, `fabrication`, or other factories.
 
-It introduces the concept of **templates**: an abstract group of objects. You define what objects (or other templates) your template can contain (not unlike a factory), then you can create instances of it by invoking the build or create functions. These templates can be used to make test setup much quicker and easier. Templates are not intended to replace factories, but bridge the gap where `factory_girl` and `fabrication` factories fall short.
+It introduces the concept of **templates**: a group of named values/objects (as a `Hash`.) You define what objects (or other templates) your template can contain (similar to a factory), then you can create instances of that template using the `#build` or `#create` functions. These templates can be used to make test setup much quicker and easier. Templates are not intended to replace factories, but bridge the gap where `factory_girl` and `fabrication` factories fall short.
 
 They are most useful when:
  - Your models are weakly related or non-relational (e.g. not joined by ActiveRecord associations)
@@ -54,7 +54,13 @@ context "networkable people" do
 end
 ```
 
+In this sample, the `let(:user_group)` block returns a `Hash` object, that contains structured, pre-fabricated data of our choosing that we can use for our `it` example.
+
 ### Usage
+
+##### What is a template?
+
+Templates are effectively `Hash` schemas. By defining a template, you are specifying which named-values can appear in a `Hash` instance of that template. When defining a template, you can also define custom presets, sequences, and other named options. You can leverage these features to simplify how you create complex objects & test data.
 
 ##### Defining templates
 
@@ -67,7 +73,17 @@ Templates are defined in `spec/templates/**/*.rb` files. Define a template using
 Once defined, these templates can be instantiated using `build` and `create`, which are analogous to the same `factory_girl`/`fabrication` methods
 
     Olfactory.build :computer # Creates objects, but does not implictly save them
-    Olfactory.create :computer # Creates objects, and attempts to save all items that respond to #save!
+    Olfactory.create :computer # Creates objects, and attempts to save all items in the Hash that respond to #save!
+
+Invoking these two methods will return a `Hash` matching the template schema, populated with either custom or preset values.
+
+##### Defining template relationships using `has` & `embeds`
+
+Every template is composed of two kinds of named values: *fields* or other *templates*.
+
+Fields hold actual values: integers, strings, objects, etc. The `has` relation is used define a field. `#has_one` holds one object, and '#has_many' holds a collection of objects (`Array` or `Hash`.)
+
+You can also embed a template within another template. This is useful if you have a template composed of other smaller sub-templates (e.g. a Computer template composed of Processor and Memory templates.) Use the `embeds` relation to nest a template. `#embeds_one` will embed a single instance of a template. `#embeds_many` will embed a collection of template instances (in the form of an `Array` or `Hash`.)
 
 ##### #has_one
 
@@ -513,12 +529,14 @@ Sample:
 
 ##### #transient
  
-Similar to `factory_girl`'s transients, `transient` defines a temporary variable. You can store values in here to compose conditional logic or more sophisticated templates. When a template contains an embedded template, it will pass down all of its transients to the embedded template. Invoking `transients` on an instance of a template will return a hash of its transient variables.
+Similar to `factory_girl`'s transients, `transient` defines a temporary variable. You can store values in here to compose conditional logic or more sophisticated templates. When a template contains an embedded template, it will pass down all of its transients to the embedded template. Invoking `transients` on an instance of a template will return a `Hash` of its transient variables.
 
 Usage:
-> **transient** name, Object
+> **transient** name, Object # Sets value
 > 
-> **transients**[name]
+> **transient** name { Object } # Sets value (lazily)
+> 
+> **transients**[name] # Gets value
 
 Sample:
 
@@ -557,9 +575,14 @@ Sample:
 Defines default values, which are used to fill in any empty `has`, `embeds` or `transient` fields, before and after respectively. They will *not* overwrite any non-nil value.
 
 Definition:
-> **before** { |instance| &block }
+> **before**(*:context, :run => Symbol*) { |instance| &block }
 > 
 > **after** { |instance| &block }
+
+- `:context` defines when this before should run. Specifying `:embedded` means it runs just before embedded objects are added to the instance. Default (by providing no value) is to run immediately as instance is created.
+- `:run` defines how many times this before can be invoked for an instance. Specifying `:once` means it can only be invoked once (singleton-style.) Default is to always execute. Can only be specified if `:context` is also specified.
+
+The latter two options can be useful if you are embedding a template that reads the parent's fields or transients.
 
 Sample:
 
@@ -597,6 +620,85 @@ Sample:
     end
     # Result 
     {
-      :cpu => "ARM",
-      :memory_size => "1GB"
+      :memory_size => "1GB",
+      :cpu => "ARM"
     }
+
+Another `before` sample using `:context` and `:run` options:
+
+    # Template defintions
+    Olfactory.template :widget do |t|
+      t.embeds_many :doodads, :singular => :doodad
+      t.has_one :thingamabob
+      t.macro :quality do |m, type|
+        m.transient :attribute, type.to_s
+      end
+      t.before(:embedded) do |d|
+        d.quality :dull
+        d.thingamabob "thingamabob" if d[:doodads] && d[:doodads].count > 0
+      end
+    end
+    Olfactory.template :doodad do |t|
+      t.has_one :gizmo
+      t.after do |d|
+        d.gizmo "#{d.transients[:attribute]} doodad"
+      end
+    end
+    # Build instance of template
+    Olfactory.build :widget do |w|
+      w.doodad
+      w.quality :shiny
+      w.doodad
+    end
+    # Result
+    {
+      :doodads => [{ :gizmo => "dull doodad" },
+                   { :gizmo => "shiny doodad" }]
+      # NOTE: A 'thingamabob' wasn't added. This is because the #before only ran once.
+    }
+
+##### #instantiate
+
+Defines an 'instantiator': a function you can call to build custom objects from an instance of a template. The block can accept arguments or use the template instance as input, and should return an object or collection. Invoke the block using the `#build` or `#create` method to get the return value from the instantiator. When `#create` is used, any object that responds to `#save!` will be saved.
+
+Definition:
+> **instantiate** :name { |instance, *args..| &block }
+
+When using:
+> **build**(name*[, arg1, arg2...]*)
+> 
+> **create**(name*[, arg1, arg2...]*)
+
+Sample:
+
+    # Template defintion
+    Olfactory.template :widget do |t|
+      t.has_one :doodad
+      t.instantiate :doodad do |i, j|
+        String.new("#{i[:doodad]}-instance-#{j}")
+      end
+    end
+    # Build instance of template
+    instance = Olfactory.build :widget do |w| w.doodad "doodad" end
+    instance.build(:doodad, 1)
+    # Result
+    "doodad-instance-1"
+
+### Changelog
+
+#### Version 0.2.1
+
+ - Added: `context` and `run` options to `before` blocks.
+ - Added: `dimension` option to sequences, to allow scoping.
+ - Fixed: Default values not being overridden in special cases.
+ - Fixed: Defaults adding to item and subtemplate collections.
+
+#### Version 0.2.0
+
+ - Added: Sequences (like factory_girl's)
+ - Added: Dictionaries (generic hash storage)
+ - Changed: `#build_template` and `#create_template` have been renamed to `#build` and `#create` respectively.
+
+#### Version 0.1.0
+
+ - Initial version of Olfactory (templates, transients, macros, presets, has/embeds relations)
