@@ -1,7 +1,7 @@
 Olfactory
 ==========
 
-[![Build Status](https://travis-ci.org/delner/olfactory.svg?branch=master)](https://travis-ci.org/delner/olfactory) ![Gem Version](https://badge.fury.io/rb/olfactory.svg)
+[![Build Status](https://travis-ci.org/delner/olfactory.svg?branch=master)](https://travis-ci.org/delner/olfactory) ![Gem Version](https://img.shields.io/gem/v/olfactory.svg?maxAge=2592000)
 ###### *For Ruby 1.9.3, 2.0.0, 2.1.0*
 
 ### Introduction
